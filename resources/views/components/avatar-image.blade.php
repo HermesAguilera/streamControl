@@ -1,0 +1,1 @@
+<img src="{{ asset('storage/' . $imagePath) }}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">

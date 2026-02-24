@@ -1,0 +1,21 @@
+.table-row {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Esto estiliza las etiquetas */
+.table-row .filament-forms-placeholder-label {
+    font-weight: 600;
+    color: #334155;
+    width: 220px;
+}
+
+/* Esto estiliza el contenido */
+.table-row .filament-forms-placeholder-content {
+    flex: 1;
+    color: #1e293b;
+    white-space: normal;
+}

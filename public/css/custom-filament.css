@@ -1,0 +1,5 @@
+/* Oculta la ilustración de estado vacío solo en la tabla de facturas del cliente */
+
+.fi-ta-empty-state-illustration, .fi-ta-empty-state-icon {
+    display: none !important;
+}

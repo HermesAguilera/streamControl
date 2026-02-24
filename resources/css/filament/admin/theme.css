@@ -1,0 +1,36 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+
+:root {
+    --primary: 59, 130, 246;
+    --success: 34, 197, 94;
+    --warning: 234, 179, 8;
+    --danger: 239, 68, 68;
+    --info: 96, 165, 250; /* Azul claro para productos */
+}
+
+.filament-panels-page {
+    background: linear-gradient(to right, #f9fafb, #ffffff);
+}
+
+@media (prefers-color-scheme: dark) {
+    .filament-panels-page {
+        background: linear-gradient(to right, #111827, #1f2937);
+    }
+}
+
+.filament-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: box-shadow 0.2s;
+}
+.filament-card:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+@media (prefers-color-scheme: dark) {
+    .filament-card {
+        background-color: #1f2937;
+        border: 1px solid #374151;
+    }
+}
