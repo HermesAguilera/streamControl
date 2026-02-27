@@ -20,7 +20,7 @@ class RoleResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationGroup = 'Administración';
     protected static ?string $navigationLabel = 'Roles';
-    protected static ?int $navigationSort = 100;
+        protected static ?int $navigationSort = 1000;
 
     protected static function hasAccess(): bool
     {

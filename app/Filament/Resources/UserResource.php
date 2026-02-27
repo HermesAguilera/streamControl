@@ -21,7 +21,7 @@ class UserResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user';
     protected static ?string $navigationGroup = 'Administración';
     protected static ?string $navigationLabel = 'Usuarios';
-    protected static ?int $navigationSort = 110;
+        protected static ?int $navigationSort = 999;
 
     protected static function hasPermission(string $permission): bool
     {
