@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources\RoleResource\Pages;
 
+use App\Filament\Concerns\HasStandardCrudNotifications;
+use App\Filament\Concerns\RedirectsToResourceIndex;
 use App\Filament\Resources\RoleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditRole extends EditRecord
 {
+    use HasStandardCrudNotifications;
+    use RedirectsToResourceIndex;
+
     protected static string $resource = RoleResource::class;
 
     protected array $permissionsToSync = [];
@@ -38,6 +43,10 @@ class EditRole extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
+                ->modalHeading('Confirmar eliminación')
+                ->modalDescription('Esta acción no se puede deshacer.')
+                ->modalSubmitActionLabel('Eliminar')
+                ->successNotificationTitle('Registro eliminado correctamente.')
                 ->visible(fn () => $this->record?->name !== 'administrador'),
         ];
     }

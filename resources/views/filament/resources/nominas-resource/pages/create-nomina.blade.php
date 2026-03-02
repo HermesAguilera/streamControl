@@ -59,14 +59,14 @@
             </div>
             <div class="mb-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-white">Descripción</label>
-                <input type="text" class="block mt-1 border-gray-300 rounded-md dark:bg-gray-700 dark:text-white w-full md:w-96 lg:w-[40rem]" wire:model.lazy="descripcion" maxlength="255" />
+                <input type="text" class="block mt-1 w-full border-gray-300 rounded-md dark:bg-gray-700 dark:text-white" wire:model.lazy="descripcion" maxlength="255" />
             </div>
-            <div class="flex justify-end mt-6">
+            <div class="mt-6 flex justify-end">
                 <x-filament::button 
                     type="button" 
                     color="primary" 
                     :icon="collect($this->empleadosSeleccionados)->every(fn($e) => !empty($e['seleccionado'])) ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle'" 
-                    class="font-bold" 
+                    class="w-full font-bold sm:w-auto" 
                     wire:click="toggleSeleccionTodos">
                     @if(collect($this->empleadosSeleccionados)->every(fn($e) => !empty($e['seleccionado'])))
                         Deseleccionar todos
@@ -81,7 +81,7 @@
                 <div class="px-4 py-5 sm:p-6">
                     <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Empleados en Nómina</h3>
                     <div class="overflow-x-auto w-full">
-                        <table class="w-full min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto">
+                        <table class="w-full min-w-[960px] divide-y divide-gray-200 text-sm dark:divide-gray-700 table-auto">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
                                     <th class="px-4 py-3 text-center text-base font-bold uppercase tracking-wider" style="color:#1e3a8a;">Seleccionar</th>
@@ -160,8 +160,8 @@
             
             <!-- Modal edición percepción -->
             @if($this->modalEditarPercepcionAbierto)
-                <div class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xs">
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
                         <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Editar percepción</h3>
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-white mb-1">Nuevo valor</label>
@@ -177,8 +177,8 @@
             
             <!-- Modal edición cantidad -->
             @if($this->modalEditarCantidadAbierto)
-                <div class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xs">
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div class="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
                         <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Editar cantidad</h3>
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 dark:text-white mb-1">Cantidad de {{ $this->modalCantidadUnidad }}</label>

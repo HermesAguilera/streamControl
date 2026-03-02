@@ -91,7 +91,10 @@ class UserResource extends Resource
                 ->preload()
                 ->searchable()
                 ->visible(fn () => static::canManageRoles()),
-        ])->columns(2);
+        ])->columns([
+            'default' => 1,
+            'md' => 2,
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -130,7 +133,10 @@ class UserResource extends Resource
                     $record->syncRoles($data['roles']);
                 }),
             Tables\Actions\EditAction::make(),
-        ])->bulkActions([
+        ])
+            ->actionsColumnLabel('Acción')
+            ->actionsAlignment('center')
+            ->bulkActions([
             Tables\Actions\DeleteBulkAction::make(),
         ]);
     }

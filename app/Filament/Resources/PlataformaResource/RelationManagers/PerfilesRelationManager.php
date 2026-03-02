@@ -19,17 +19,24 @@ class PerfilesRelationManager extends RelationManager
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('cliente_nombre')->label('Nombre cliente')->searchable(),
-                Tables\Columns\TextColumn::make('cliente_telefono')->label('Número teléfono')->searchable(),
-                Tables\Columns\TextColumn::make('proveedor_nombre')->label('Proveedor')->searchable(),
+                Tables\Columns\TextColumn::make('cliente_telefono')
+                    ->label('Número teléfono')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('proveedor_nombre')
+                    ->label('Proveedor')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('correo_cuenta')->label('Correo cuenta')->searchable(),
-                Tables\Columns\TextColumn::make('contrasena_cuenta')->label('Contraseña cuenta')->toggleable(),
+                Tables\Columns\TextColumn::make('contrasena_cuenta')->label('Contraseña cuenta')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('nombre_perfil')->label('Número perfil')->searchable(),
-                Tables\Columns\TextColumn::make('pin')->label('PIN'),
-                Tables\Columns\TextColumn::make('fecha_inicio')->label('Fecha inicio')->date(),
-                Tables\Columns\TextColumn::make('fecha_corte')->label('Fecha corte')->date(),
+                Tables\Columns\TextColumn::make('pin')->label('PIN')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('fecha_inicio')->label('Fecha inicio')->toggleable(isToggledHiddenByDefault: true)->date(),
+                Tables\Columns\TextColumn::make('fecha_corte')->label('Fecha corte')->toggleable(isToggledHiddenByDefault: true)->date(),
                 Tables\Columns\TextColumn::make('fecha_caducidad_cuenta')->label('Fecha caducidad')->date(),
                 Tables\Columns\TextColumn::make('dias_restantes')
                     ->label('Cuenta regresiva (días)')
+                    ->alignment('center')
                     ->badge()
                     ->color(fn ($state) => $state === null ? 'gray' : ($state <= 0 ? 'danger' : ($state <= 5 ? 'warning' : 'success')))
                     ->formatStateUsing(fn ($state) => $state === null ? '-' : (string) $state),
@@ -38,6 +45,7 @@ class PerfilesRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make('agregarCliente')
                     ->label('Agregar cliente')
+                    ->successNotificationTitle('Registro creado correctamente.')
                     ->model(Perfil::class)
                     ->form([
                         Forms\Components\Hidden::make('plataforma_id')
@@ -52,22 +60,12 @@ class PerfilesRelationManager extends RelationManager
                         Forms\Components\DatePicker::make('fecha_inicio')->label('Fecha inicio')->required(),
                         Forms\Components\DatePicker::make('fecha_corte')->label('Fecha corte')->required(),
                         Forms\Components\DatePicker::make('fecha_caducidad_cuenta')->label('Fecha caducidad')->required(),
-                        Forms\Components\Select::make('estado')
-                            ->options([
-                                'disponible' => 'Disponible',
-                                'activo' => 'Activo',
-                                'vencido' => 'Vencido',
-                                'suspendido' => 'Suspendido',
-                            ])
-                            ->default('activo')
-                            ->required(),
-                        Forms\Components\Toggle::make('disponible')->required()->default(false),
-                        Forms\Components\Textarea::make('notas')->columnSpanFull(),
                     ])
                     ->using(fn (array $data) => Perfil::create($data)),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
+                    ->successNotificationTitle('Cambios guardados correctamente.')
                     ->form([
                         Forms\Components\TextInput::make('cliente_nombre')->label('Nombre cliente')->required()->maxLength(120),
                         Forms\Components\TextInput::make('cliente_telefono')->label('Número teléfono')->required()->maxLength(30),
@@ -79,19 +77,15 @@ class PerfilesRelationManager extends RelationManager
                         Forms\Components\DatePicker::make('fecha_inicio')->label('Fecha inicio')->required(),
                         Forms\Components\DatePicker::make('fecha_corte')->label('Fecha corte')->required(),
                         Forms\Components\DatePicker::make('fecha_caducidad_cuenta')->label('Fecha caducidad')->required(),
-                        Forms\Components\Select::make('estado')
-                            ->options([
-                                'disponible' => 'Disponible',
-                                'activo' => 'Activo',
-                                'vencido' => 'Vencido',
-                                'suspendido' => 'Suspendido',
-                            ])
-                            ->required(),
-                        Forms\Components\Toggle::make('disponible')->required(),
-                        Forms\Components\Textarea::make('notas')->columnSpanFull(),
                     ]),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading('Confirmar eliminación')
+                    ->modalDescription('Esta acción no se puede deshacer.')
+                    ->modalSubmitActionLabel('Eliminar')
+                    ->successNotificationTitle('Registro eliminado correctamente.'),
             ])
+            ->actionsColumnLabel('Acción')
+            ->actionsAlignment('center')
             ->bulkActions([]);
     }
 }

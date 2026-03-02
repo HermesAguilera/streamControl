@@ -104,10 +104,20 @@ class CuentaResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading('Confirmar eliminación')
+                    ->modalDescription('Esta acción no se puede deshacer.')
+                    ->modalSubmitActionLabel('Eliminar')
+                    ->successNotificationTitle('Registro eliminado correctamente.'),
             ])
+                    ->actionsColumnLabel('Acción')
+                    ->actionsAlignment('center')
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->modalHeading('Confirmar eliminación masiva')
+                    ->modalDescription('Se eliminarán los registros seleccionados y esta acción no se puede deshacer.')
+                    ->modalSubmitActionLabel('Eliminar seleccionados')
+                    ->successNotificationTitle('Registros eliminados correctamente.'),
             ]);
     }
 

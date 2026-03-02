@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('nombre')->unique();
             $table->text('descripcion')->nullable();
             $table->boolean('activa')->default(true);
+            $table->unsignedTinyInteger('perfiles_por_cuenta')->default(5);
             $table->timestamps();
         });
     }

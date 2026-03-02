@@ -3,7 +3,7 @@
         <div class="text-gray-500">No hay registros de pago en el historial.</div>
     @else
         <div class="overflow-x-auto w-full">
-            <table class="min-w-full w-full divide-y divide-gray-200 border">
+            <table class="min-w-[820px] w-full divide-y divide-gray-200 border">
                 <thead>
                     <tr class="bg-gray-50">
                         <th class="px-6 py-3 text-left text-base font-bold text-gray-700 uppercase tracking-wider">Nombre</th>

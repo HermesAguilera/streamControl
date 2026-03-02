@@ -5,13 +5,14 @@ namespace App\Filament\Resources\PlataformaResource\Pages;
 use App\Filament\Resources\PlataformaResource;
 use App\Models\Cuenta;
 use App\Models\Perfil;
+use App\Support\ClientMessageBuilder;
+use App\Support\UserPreferenceState;
 use Closure;
 use Filament\Forms\Get;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -25,6 +26,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
     protected array $clientProfilesCache = [];
     protected array $clientDistributedCache = [];
     protected bool $clientProfilesCacheLoaded = false;
+    protected ?bool $shouldColorizeAccounts = null;
 
     protected static string $resource = PlataformaResource::class;
 
@@ -68,10 +70,12 @@ class GestionClientesPlataforma extends ManageRelatedRecords
             ->columns([
                 Tables\Columns\TextColumn::make('cliente_posicion')
                     ->label('#')
+                    ->alignment('center')
                     ->rowIndex(),
                 Tables\Columns\TextColumn::make('proveedor_nombre')->label('Proveedor')->searchable(),
                 Tables\Columns\TextColumn::make('cuenta.fecha_inicio')
                     ->label('Fecha de inicio')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->date(),
                 Tables\Columns\TextColumn::make('fecha_caducidad_cuenta')->label('Fecha de caducidad')->date(),
                 Tables\Columns\TextColumn::make('correo_cuenta')
@@ -79,9 +83,14 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ->searchable()
                     ->formatStateUsing(fn (?string $state): string => $this->renderAccountBadge($state))
                     ->html(),
-                Tables\Columns\TextColumn::make('contrasena_cuenta')->label('Contraseña'),
+                Tables\Columns\TextColumn::make('contrasena_cuenta')
+                    ->label('Contraseña')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('cliente_nombre')->label('Nombre del cliente')->searchable(),
-                Tables\Columns\TextColumn::make('cliente_telefono')->label('Número de teléfono')->searchable(),
+                Tables\Columns\TextColumn::make('cliente_telefono')
+                    ->label('Número de teléfono')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('nombre_perfil')
                     ->label('Número de perfil')
                     ->searchable()
@@ -94,10 +103,17 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
                         return $value;
                     }),
-                Tables\Columns\TextColumn::make('fecha_inicio')->label('Fecha inicio')->date(),
-                Tables\Columns\TextColumn::make('fecha_corte')->label('Fecha corte')->date(),
+                Tables\Columns\TextColumn::make('fecha_inicio')
+                    ->label('Fecha inicio')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->date(),
+                Tables\Columns\TextColumn::make('fecha_corte')
+                    ->label('Fecha corte')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->date(),
                 Tables\Columns\TextColumn::make('dias_restantes')
                     ->label('Cuenta regresiva')
+                    ->alignment('center')
                     ->badge()
                     ->color(fn ($state) => $state === null ? 'gray' : ($state <= 0 ? 'danger' : ($state <= 5 ? 'warning' : 'success')))
                     ->formatStateUsing(fn ($state) => $state === null ? '-' : (string) $state),
@@ -116,12 +132,11 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ])),
                 Tables\Actions\CreateAction::make('agregarCliente')
                     ->label('Agregar cliente')
+                    ->successNotificationTitle('Registro creado correctamente.')
                     ->visible(fn () => static::hasPermission('clientes.create'))
                     ->form($this->clienteCreateFormSchema())
                     ->mutateFormDataUsing(function (array $data): array {
                         $data['plataforma_id'] = $this->getRecord()->id;
-                        $data['estado'] = 'activo';
-                        $data['disponible'] = false;
 
                         return $data;
                     })
@@ -129,8 +144,6 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                         $cantidad = max((int) ($data['cantidad_perfiles'] ?? 1), 1);
                         $cuentaId = (int) ($data['cuenta_id'] ?? 0);
                         unset($data['cantidad_perfiles']);
-
-                        $data['bundle_id'] = (string) Str::uuid();
 
                         try {
                             return DB::transaction(function () use ($data, $cantidad) {
@@ -178,17 +191,21 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ]))
                     ->action(fn () => null),
                 Tables\Actions\EditAction::make()
+                    ->successNotificationTitle('Cambios guardados correctamente.')
                     ->visible(fn () => static::hasPermission('clientes.edit'))
                     ->form(fn (Perfil $record): array => $this->clienteEditFormSchema($record))
                     ->using(fn (Perfil $record, array $data): Perfil => $this->updateClientBundleFromEdit($record, $data)),
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn () => static::hasPermission('clientes.delete'))
                     ->requiresConfirmation()
+                    ->modalHeading('Confirmar eliminación')
                     ->modalDescription(function (Perfil $record): string {
                         $total = $this->getClientBundleRecords($record)->count();
 
-                        return "Se eliminarán {$total} perfiles de este cliente.";
+                        return "Se eliminarán {$total} perfiles de este cliente. Esta acción no se puede deshacer.";
                     })
+                    ->modalSubmitActionLabel('Eliminar')
+                    ->successNotificationTitle('Registro eliminado correctamente.')
                     ->action(function (Perfil $record): void {
                         DB::transaction(function () use ($record): void {
                             $this->getClientBundleRecords($record)->each(fn (Perfil $perfil) => $perfil->delete());
@@ -197,61 +214,44 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                         $this->resetTransientCaches();
                     }),
             ])
+                    ->actionsColumnLabel('Acción')
+                    ->actionsAlignment('center')
             ->bulkActions([]);
     }
 
-    protected function clienteFormSchema(): array
+    protected function clienteFormSchema(?Perfil $contextRecord = null): array
     {
         return [
             Forms\Components\TextInput::make('cliente_nombre')->label('Nombre cliente')->required()->maxLength(120),
             Forms\Components\TextInput::make('cliente_telefono')->label('Número teléfono')->required()->maxLength(30),
             Forms\Components\Select::make('cuenta_id')
                 ->label('Cuenta')
-                ->options(fn (?Perfil $record): array => $this->getAvailableCuentaOptions($record))
+                ->options(fn (): array => $this->getAvailableCuentaOptions($contextRecord))
                 ->searchable()
                 ->preload()
-                ->default(function (?Perfil $record): ?int {
-                    if (! $record) {
-                        return null;
+                ->default(fn (): ?int => $this->resolveCuentaIdForPerfil($contextRecord))
+                ->afterStateHydrated(function (Forms\Components\Select $component, $state) use ($contextRecord): void {
+                    if (filled($state) || ! $contextRecord) {
+                        return;
                     }
 
-                    if (filled($record->cuenta_id)) {
-                        return (int) $record->cuenta_id;
+                    $resolvedCuentaId = $this->resolveCuentaIdForPerfil($contextRecord);
+
+                    if (filled($resolvedCuentaId)) {
+                        $component->state((int) $resolvedCuentaId);
                     }
-
-                    $correo = $this->normalizeAccountEmail((string) $record->correo_cuenta);
-
-                    if ($correo === '') {
-                        return null;
-                    }
-
-                    return Cuenta::query()
-                        ->where('plataforma_id', $this->getRecord()->id)
-                        ->whereRaw('LOWER(TRIM(correo)) = ?', [$correo])
-                        ->value('id');
                 })
                 ->required()
                 ->live(debounce: 300)
-                ->helperText('Solo se muestran cuentas con perfiles disponibles.'),
+                ->helperText('Se muestran cuentas con cupos disponibles. En edición, la cuenta actual permanece visible aunque no tenga cupos.'),
             Forms\Components\TextInput::make('pin')->label('PIN')->maxLength(20),
             Forms\Components\DatePicker::make('fecha_caducidad_cuenta')->label('Fecha caducidad')->required(),
-            Forms\Components\Select::make('estado')
-                ->options([
-                    'disponible' => 'Disponible',
-                    'activo' => 'Activo',
-                    'vencido' => 'Vencido',
-                    'suspendido' => 'Suspendido',
-                ])
-                ->default('activo')
-                ->required(),
-            Forms\Components\Toggle::make('disponible')->required()->default(false),
-            Forms\Components\Textarea::make('notas')->columnSpanFull(),
         ];
     }
 
     protected function clienteCreateFormSchema(): array
     {
-        $schema = $this->clienteFormSchema();
+        $schema = $this->clienteFormSchema(null);
 
         array_splice($schema, 3, 0, [
             Forms\Components\TextInput::make('cantidad_perfiles')
@@ -296,7 +296,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
     protected function clienteEditFormSchema(Perfil $record): array
     {
-        $schema = $this->clienteFormSchema();
+        $schema = $this->clienteFormSchema($record);
 
         array_splice($schema, 3, 0, [
             Forms\Components\TextInput::make('cantidad_perfiles')
@@ -348,18 +348,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
     protected function buildClientMessage(Perfil $perfil): string
     {
-        $fechaInicio = $perfil->fecha_inicio?->format('d/m/Y') ?? '-';
-        $fechaCorte = $perfil->fecha_corte?->format('d/m/Y') ?? '-';
-
-        return "Estimado {$perfil->cliente_nombre}:\n"
-            . "las credenciales de su cuenta son:\n"
-            . "Correo cuenta: {$perfil->correo_cuenta}\n"
-            . "Contraseña cuenta: {$perfil->contrasena_cuenta}\n"
-            . "Número perfil: {$perfil->nombre_perfil}\n"
-            . "PIN: {$perfil->pin}\n"
-            . "Fecha inicio: {$fechaInicio}\n"
-            . "Fecha corte: {$fechaCorte}\n"
-            . "gracias por preferirnos!";
+        return ClientMessageBuilder::buildDeliveryMessage($perfil);
     }
 
     protected function resolveNextProfileSlot(string $correoCuenta): string
@@ -480,14 +469,6 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
     protected function getClientBundleRecords(Perfil $record): EloquentCollection
     {
-        if (filled($record->bundle_id)) {
-            return Perfil::query()
-                ->where('plataforma_id', $record->plataforma_id)
-                ->where('bundle_id', $record->bundle_id)
-                ->orderBy('id')
-                ->get();
-        }
-
         if (filled($record->cuenta_id)) {
             return Perfil::query()
                 ->where('plataforma_id', $record->plataforma_id)
@@ -512,13 +493,8 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         $cuentaId = (int) ($data['cuenta_id'] ?? 0);
         $cantidad = max((int) ($data['cantidad_perfiles'] ?? 1), 1);
         $bundleRecords = $this->getClientBundleRecords($record)->values();
-        $bundleId = (string) ($bundleRecords->first()?->bundle_id ?: $record->bundle_id ?: Str::uuid());
 
         unset($data['cantidad_perfiles']);
-
-        $data['bundle_id'] = $bundleId;
-        $data['estado'] = 'activo';
-        $data['disponible'] = false;
 
         try {
             return DB::transaction(function () use ($bundleRecords, $cantidad, $data, $record): Perfil {
@@ -625,10 +601,28 @@ class GestionClientesPlataforma extends ManageRelatedRecords
             return "<span class='text-gray-500'>-</span>";
         }
 
-        $solid = $this->resolveAccountColor($correoCuenta, 'solid');
         $correoEscapado = e($correoCuenta);
 
+        if (! $this->shouldColorizeAccounts()) {
+            return "<span class='font-medium text-gray-900 dark:text-gray-100'>{$correoEscapado}</span>";
+        }
+
+        $solid = $this->resolveAccountColor($correoCuenta, 'solid');
+
         return "<span style=\"color:{$solid};font-weight:600;\">{$correoEscapado}</span>";
+    }
+
+    protected function shouldColorizeAccounts(): bool
+    {
+        if ($this->shouldColorizeAccounts !== null) {
+            return $this->shouldColorizeAccounts;
+        }
+
+        $preferences = UserPreferenceState::forUser(auth()->user());
+
+        $this->shouldColorizeAccounts = (bool) ($preferences['colorize_accounts'] ?? true);
+
+        return $this->shouldColorizeAccounts;
     }
 
     protected function getAccountsSummary(): Collection
@@ -684,6 +678,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         $this->clientProfilesCache = [];
         $this->clientDistributedCache = [];
         $this->clientProfilesCacheLoaded = false;
+        $this->shouldColorizeAccounts = null;
     }
 
     protected function ensureClientProfilesCacheLoaded(): void
@@ -694,7 +689,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
         $rows = Perfil::query()
             ->where('plataforma_id', $this->getRecord()->id)
-            ->get(['bundle_id', 'cuenta_id', 'cliente_nombre', 'correo_cuenta', 'nombre_perfil']);
+            ->get(['cuenta_id', 'cliente_nombre', 'correo_cuenta', 'nombre_perfil']);
 
         $grouped = $rows->groupBy(function (Perfil $perfil): string {
             return $this->resolveClientBundleCacheKey($perfil);
@@ -741,10 +736,6 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
     protected function resolveClientBundleCacheKey(Perfil $record): string
     {
-        if (filled($record->bundle_id)) {
-            return 'bundle:' . $record->bundle_id;
-        }
-
         if (filled($record->cuenta_id)) {
             return implode('|', [$this->getRecord()->id, (int) $record->cuenta_id, mb_strtolower(trim((string) $record->cliente_nombre))]);
         }
@@ -801,6 +792,76 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         }
 
         return $this->normalizeAccountEmail((string) $cuenta->correo);
+    }
+
+    protected function resolveCuentaIdForPerfil(?Perfil $record): ?int
+    {
+        if (! $record) {
+            return null;
+        }
+
+        if (filled($record->cuenta_id)) {
+            return (int) $record->cuenta_id;
+        }
+
+        $correo = $this->normalizeAccountEmail((string) $record->correo_cuenta);
+
+        if ($correo === '') {
+            return null;
+        }
+
+        $cuentaId = Cuenta::query()
+            ->where('plataforma_id', $this->getRecord()->id)
+            ->whereRaw('LOWER(TRIM(correo)) = ?', [$correo])
+            ->value('id');
+
+        if (! filled($cuentaId)) {
+            $cuentaId = $this->createMissingCuentaFromPerfil($record, $correo);
+        }
+
+        return filled($cuentaId) ? (int) $cuentaId : null;
+    }
+
+    protected function createMissingCuentaFromPerfil(Perfil $record, string $correoNormalizado): ?int
+    {
+        if ($correoNormalizado === '') {
+            return null;
+        }
+
+        $existingId = Cuenta::query()
+            ->where('plataforma_id', $this->getRecord()->id)
+            ->whereRaw('LOWER(TRIM(correo)) = ?', [$correoNormalizado])
+            ->value('id');
+
+        if (filled($existingId)) {
+            return (int) $existingId;
+        }
+
+        try {
+            $cuenta = Cuenta::query()->create([
+                'plataforma_id' => $this->getRecord()->id,
+                'proveedor' => trim((string) ($record->proveedor_nombre ?: 'Sin proveedor')),
+                'correo' => $correoNormalizado,
+                'contrasena' => (string) ($record->contrasena_cuenta ?: 'sin-definir'),
+                'fecha_inicio' => $record->fecha_inicio?->toDateString() ?: now()->toDateString(),
+                'fecha_corte' => $record->fecha_corte?->toDateString() ?: now()->toDateString(),
+            ]);
+        } catch (QueryException $exception) {
+            $existingId = Cuenta::query()
+                ->where('plataforma_id', $this->getRecord()->id)
+                ->whereRaw('LOWER(TRIM(correo)) = ?', [$correoNormalizado])
+                ->value('id');
+
+            return filled($existingId) ? (int) $existingId : null;
+        }
+
+        Perfil::query()
+            ->where('plataforma_id', $record->plataforma_id)
+            ->where('cliente_nombre', $record->cliente_nombre)
+            ->whereRaw('LOWER(TRIM(correo_cuenta)) = ?', [$correoNormalizado])
+            ->update(['cuenta_id' => $cuenta->id]);
+
+        return (int) $cuenta->id;
     }
 
     protected function enrichDataWithCuenta(array $data): array
@@ -863,6 +924,12 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
             if (filled($record->cuenta_id)) {
                 $selectedIds->push((int) $record->cuenta_id);
+            } else {
+                $resolvedCuentaId = $this->resolveCuentaIdForPerfil($record);
+
+                if (filled($resolvedCuentaId)) {
+                    $selectedIds->push((int) $resolvedCuentaId);
+                }
             }
         }
 
@@ -877,8 +944,14 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     return [];
                 }
 
+                $label = "{$cuenta->correo} ({$cuenta->proveedor}) - Disponibles: {$available}";
+
+                if ($isSelected && $available <= 0) {
+                    $label .= ' · Cuenta actual (sin cupos)';
+                }
+
                 return [
-                    $cuenta->id => "{$cuenta->correo} ({$cuenta->proveedor}) - Disponibles: {$available}",
+                    $cuenta->id => $label,
                 ];
             })
             ->all();

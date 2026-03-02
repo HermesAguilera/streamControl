@@ -49,10 +49,6 @@ class PlataformaPerfilesDemoSeeder extends Seeder
                 $clienteNombre = null;
                 $clienteTelefono = null;
                 $clienteEmail = null;
-                $clienteDocumento = null;
-                $clienteDireccion = null;
-                $estado = 'disponible';
-                $disponible = true;
 
                 if ($asignado) {
                     $nombre = $nombres[array_rand($nombres)];
@@ -60,17 +56,6 @@ class PlataformaPerfilesDemoSeeder extends Seeder
                     $clienteNombre = "{$nombre} {$apellido}";
                     $clienteTelefono = '9' . random_int(100, 999) . '-' . random_int(1000, 9999);
                     $clienteEmail = strtolower($nombre . '.' . $apellido . random_int(1, 99)) . '@mail.com';
-                    $clienteDocumento = (string) random_int(1000000000000, 9999999999999);
-                    $clienteDireccion = 'Col. Centro, Tegucigalpa';
-                    $disponible = false;
-
-                    if ($fechaCaducidad->isPast()) {
-                        $estado = 'vencido';
-                    } elseif ($fechaCaducidad->lte(Carbon::today()->addDays(4))) {
-                        $estado = 'suspendido';
-                    } else {
-                        $estado = 'activo';
-                    }
                 }
 
                 Perfil::query()->create([
@@ -83,14 +68,9 @@ class PlataformaPerfilesDemoSeeder extends Seeder
                     'correo_cuenta' => $correoCuenta,
                     'contrasena_cuenta' => 'Pass' . random_int(1000, 9999),
                     'cliente_email' => $clienteEmail,
-                    'cliente_documento' => $clienteDocumento,
-                    'cliente_direccion' => $clienteDireccion,
-                    'estado' => $estado,
                     'fecha_inicio' => $fechaInicio,
                     'fecha_corte' => $fechaCorte,
                     'fecha_caducidad_cuenta' => $fechaCaducidad,
-                    'disponible' => $disponible,
-                    'notas' => $asignado ? 'Registro demo asignado automáticamente.' : 'Perfil disponible para asignación.',
                 ]);
             }
         }

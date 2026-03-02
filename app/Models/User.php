@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 
 
@@ -86,6 +87,11 @@ class User extends Authenticatable //implements FilamentUser
     public function persona()
     {
         return $this->belongsTo(Persona::class);
+    }
+
+    public function preference(): HasOne
+    {
+        return $this->hasOne(UserPreference::class);
     }
 
 

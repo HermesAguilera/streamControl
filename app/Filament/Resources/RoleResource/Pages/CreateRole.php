@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources\RoleResource\Pages;
 
+use App\Filament\Concerns\HasStandardCrudNotifications;
+use App\Filament\Concerns\RedirectsToResourceIndex;
 use App\Filament\Resources\RoleResource;
 use App\Models\Empresa;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateRole extends CreateRecord
 {
+    use HasStandardCrudNotifications;
+    use RedirectsToResourceIndex;
+
     protected static string $resource = RoleResource::class;
 
     protected array $permissionsToSync = [];

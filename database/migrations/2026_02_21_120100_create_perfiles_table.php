@@ -19,17 +19,12 @@ return new class extends Migration
             $table->string('correo_cuenta')->nullable();
             $table->string('contrasena_cuenta')->nullable();
             $table->string('cliente_email')->nullable();
-            $table->string('cliente_documento', 50)->nullable();
-            $table->string('cliente_direccion')->nullable();
-            $table->enum('estado', ['disponible', 'activo', 'vencido', 'suspendido'])->default('disponible');
             $table->date('fecha_inicio')->nullable();
             $table->date('fecha_corte')->nullable();
             $table->date('fecha_caducidad_cuenta')->nullable();
-            $table->boolean('disponible')->default(true);
-            $table->text('notas')->nullable();
             $table->timestamps();
 
-            $table->unique(['plataforma_id', 'nombre_perfil']);
+            $table->unique(['plataforma_id', 'correo_cuenta', 'nombre_perfil'], 'perfiles_plataforma_correo_nombre_unique');
         });
     }
 

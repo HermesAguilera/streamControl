@@ -11,8 +11,8 @@
         <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($cuentas as $cuenta)
                 <div class="rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10">
-                    <div class="mb-1 flex items-center justify-between gap-2">
-                        <span class="text-xs font-semibold" style="color: {{ $cuenta['solidColor'] }};">
+                    <div class="mb-1 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                        <span class="break-all text-xs font-semibold" style="color: {{ $cuenta['solidColor'] }};">
                             {{ $cuenta['correo'] }}
                         </span>
                         <span class="text-xs text-gray-500 dark:text-gray-400">

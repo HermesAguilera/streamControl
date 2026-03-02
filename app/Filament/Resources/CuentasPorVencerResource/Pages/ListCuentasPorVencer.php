@@ -11,14 +11,14 @@ class ListCuentasPorVencer extends ListRecords
 
     public function getTitle(): string
     {
-        return 'Clientes con suscripciones por vencer';
+        return 'Clientes por vencer';
     }
 
     public function getBreadcrumbs(): array
     {
         return [
             url()->route('filament.admin.pages.dashboard') => 'Dashboard',
-            'Lista',
+            'Clientes por vencer',
         ];
     }
 }

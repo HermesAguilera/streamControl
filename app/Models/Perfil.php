@@ -16,7 +16,6 @@ class Perfil extends Model
     protected $fillable = [
         'plataforma_id',
         'cuenta_id',
-        'bundle_id',
         'nombre_perfil',
         'pin',
         'cliente_nombre',
@@ -25,21 +24,15 @@ class Perfil extends Model
         'correo_cuenta',
         'contrasena_cuenta',
         'cliente_email',
-        'cliente_documento',
-        'cliente_direccion',
-        'estado',
         'fecha_inicio',
         'fecha_corte',
         'fecha_caducidad_cuenta',
-        'disponible',
-        'notas',
     ];
 
     protected $casts = [
         'fecha_inicio' => 'date',
         'fecha_corte' => 'date',
         'fecha_caducidad_cuenta' => 'date',
-        'disponible' => 'boolean',
     ];
 
     public function setNombrePerfilAttribute($value): void

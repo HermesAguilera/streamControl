@@ -14,7 +14,7 @@ class PlataformasOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         $hoy = Carbon::today();
-        $limitePorVencer = Carbon::today()->addDays(4);
+        $limitePorVencer = Carbon::today()->addDays(5);
 
         $plataformas = Plataforma::query()
             ->withCount([
@@ -46,7 +46,7 @@ class PlataformasOverview extends StatsOverviewWidget
                 "Clientes: {$plataforma->clientes_count}",
                 '🎬 ' . Str::upper($plataforma->nombre)
             )
-                ->description("Por vencer (<5 días): {$plataforma->por_vencer_count}")
+                ->description("Por vencer (≤5 días): {$plataforma->por_vencer_count}")
                 ->url(PlataformaResource::getUrl('clientes', ['record' => $plataforma]))
                 ->color($color);
         }

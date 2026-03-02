@@ -1,23 +1,14 @@
 @php
-    $textoMensaje = 'Estimado ' . $record->cliente_nombre . ', su cuenta está por vencer, le quedan ' . ($record->dias_restantes ?? '-') . ' días de su suscripción. Por favor envíenos un mensaje si quiere renovar su suscripción.';
+    $textoMensaje = trim((string) ($mensaje ?? 'No se pudo generar el mensaje para este cliente.'));
 @endphp
 
 <div x-data="{ copiado: false }" class="space-y-3">
     <textarea
         x-ref="mensaje"
         readonly
-        rows="8"
-        style="
-            width: 100%;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db;
-            background: #ffffff !important;
-            color: #111827 !important;
-            opacity: 1 !important;
-            padding: 0.75rem;
-            line-height: 1.5;
-            font-size: 0.95rem;
-        "
+        rows="9"
+        class="w-full rounded-lg border-gray-300 px-3 py-2 text-sm leading-6"
+        style="background-color: #ffffff !important; color: #111827 !important; -webkit-text-fill-color: #111827 !important; opacity: 1 !important;"
     >{{ $textoMensaje }}</textarea>
 
     <button

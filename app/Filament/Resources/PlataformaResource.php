@@ -85,7 +85,10 @@ class PlataformaResource extends Resource
                 ->visible(fn () => static::hasPermission('clientes.view'))
                 ->url(fn (Plataforma $record): string => static::getUrl('clientes', ['record' => $record])),
             Tables\Actions\EditAction::make(),
-        ])->bulkActions([
+        ])
+            ->actionsColumnLabel('Acción')
+            ->actionsAlignment('center')
+            ->bulkActions([
             Tables\Actions\DeleteBulkAction::make(),
         ]);
     }

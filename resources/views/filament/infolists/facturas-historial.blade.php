@@ -2,9 +2,9 @@
     @if($getRecord()->facturas && $getRecord()->facturas->count() > 0)
         <div class="space-y-3">
             @foreach($getRecord()->facturas as $factura)
-                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex-1">
-                        <div class="flex items-center space-x-4">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-4">
                             <div>
                                 <span class="font-medium text-gray-900 dark:text-gray-100">
                                     #{{ str_pad($factura->id, 6, '0', STR_PAD_LEFT) }}

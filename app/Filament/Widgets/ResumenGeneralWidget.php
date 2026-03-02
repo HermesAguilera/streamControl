@@ -13,7 +13,7 @@ class ResumenGeneralWidget extends StatsOverviewWidget
     protected function getStats(): array
     {
         $hoy = Carbon::today();
-        $limitePorVencer = Carbon::today()->addDays(4);
+        $limitePorVencer = Carbon::today()->addDays(5);
 
         $totalClientes = Perfil::query()
             ->whereNotNull('cliente_nombre')
@@ -37,7 +37,7 @@ class ResumenGeneralWidget extends StatsOverviewWidget
                 ->icon('heroicon-o-users')
                 ->color('primary'),
 
-            Stat::make('Cuentas por vencer (<5 días)', (string) $cuentasPorVencer)
+            Stat::make('Cuentas por vencer (≤5 días)', (string) $cuentasPorVencer)
                 ->description('Clientes con caducidad próxima')
                 ->icon('heroicon-o-exclamation-triangle')
                 ->color($cuentasPorVencer > 0 ? 'warning' : 'success'),

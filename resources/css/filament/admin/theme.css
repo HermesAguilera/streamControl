@@ -34,3 +34,21 @@
         border: 1px solid #374151;
     }
 }
+
+.ui-dense .fi-section,
+.ui-dense .fi-card,
+.ui-dense .fi-ta-content {
+    --spacing: 0.75rem;
+}
+
+.ui-dense .fi-ta-table tbody tr td {
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+}
+
+.ui-reduce-motion *,
+.ui-reduce-motion *::before,
+.ui-reduce-motion *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+}

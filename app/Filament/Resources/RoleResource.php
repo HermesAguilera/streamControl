@@ -148,8 +148,14 @@ class RoleResource extends Resource
                 Tables\Actions\EditAction::make()
                     ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
                 Tables\Actions\DeleteAction::make()
+                    ->modalHeading('Confirmar eliminación')
+                    ->modalDescription('Esta acción no se puede deshacer.')
+                    ->modalSubmitActionLabel('Eliminar')
+                    ->successNotificationTitle('Registro eliminado correctamente.')
                     ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
             ])
+                    ->actionsColumnLabel('Acción')
+                    ->actionsAlignment('center')
             ->bulkActions([]);
     }
 
