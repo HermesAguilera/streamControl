@@ -52,3 +52,50 @@
     transition-duration: 0ms !important;
     animation-duration: 0ms !important;
 }
+
+.fi-sidebar:not(.fi-sidebar-open) {
+    transform: translateX(0) !important;
+    width: 9.5rem !important;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-header {
+    justify-content: center;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-header > div:first-child {
+    display: flex !important;
+    width: 100%;
+    justify-content: center;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-header > div:first-child a,
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-header > div:first-child .fi-logo {
+    display: inline-flex;
+    justify-content: center;
+    text-align: center;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-header button.mx-auto {
+    display: none !important;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-nav {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.9rem;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-button {
+    justify-content: flex-start !important;
+    padding-left: 0.55rem;
+    padding-right: 0.4rem;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-group-button {
+    justify-content: flex-start;
+    padding-left: 0.55rem;
+}

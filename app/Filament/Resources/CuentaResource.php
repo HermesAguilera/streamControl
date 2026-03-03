@@ -88,6 +88,7 @@ class CuentaResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('proveedor')
                     ->label('Proveedor')
+                    ->action(fn (Cuenta $record, $livewire) => $livewire->mountTableAction('ver', (string) $record->getKey()))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('correo')
                     ->label('Correo')
@@ -103,12 +104,25 @@ class CuentaResource extends Resource
                     ->date(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
-                    ->modalHeading('Confirmar eliminación')
-                    ->modalDescription('Esta acción no se puede deshacer.')
-                    ->modalSubmitActionLabel('Eliminar')
-                    ->successNotificationTitle('Registro eliminado correctamente.'),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('ver')
+                        ->label('Ver')
+                        ->icon('heroicon-o-eye')
+                        ->modalHeading('Detalle de la cuenta')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Cerrar')
+                        ->modalContent(fn (Cuenta $record) => view('filament.modals.detalle-cuenta', [
+                            'cuenta' => $record->loadMissing('plataforma'),
+                        ])),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalHeading('Confirmar eliminación')
+                        ->modalDescription('Esta acción no se puede deshacer.')
+                        ->modalSubmitActionLabel('Eliminar')
+                        ->successNotificationTitle('Registro eliminado correctamente.'),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->label(''),
             ])
                     ->actionsColumnLabel('Acción')
                     ->actionsAlignment('center')

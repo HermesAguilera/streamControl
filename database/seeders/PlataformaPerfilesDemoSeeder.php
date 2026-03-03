@@ -48,14 +48,12 @@ class PlataformaPerfilesDemoSeeder extends Seeder
 
                 $clienteNombre = null;
                 $clienteTelefono = null;
-                $clienteEmail = null;
 
                 if ($asignado) {
                     $nombre = $nombres[array_rand($nombres)];
                     $apellido = $apellidos[array_rand($apellidos)];
                     $clienteNombre = "{$nombre} {$apellido}";
                     $clienteTelefono = '9' . random_int(100, 999) . '-' . random_int(1000, 9999);
-                    $clienteEmail = strtolower($nombre . '.' . $apellido . random_int(1, 99)) . '@mail.com';
                 }
 
                 Perfil::query()->create([
@@ -67,7 +65,6 @@ class PlataformaPerfilesDemoSeeder extends Seeder
                     'proveedor_nombre' => 'Proveedor ' . $platformName,
                     'correo_cuenta' => $correoCuenta,
                     'contrasena_cuenta' => 'Pass' . random_int(1000, 9999),
-                    'cliente_email' => $clienteEmail,
                     'fecha_inicio' => $fechaInicio,
                     'fecha_corte' => $fechaCorte,
                     'fecha_caducidad_cuenta' => $fechaCaducidad,

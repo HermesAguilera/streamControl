@@ -145,14 +145,18 @@ class RoleResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->since(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
-                Tables\Actions\DeleteAction::make()
-                    ->modalHeading('Confirmar eliminación')
-                    ->modalDescription('Esta acción no se puede deshacer.')
-                    ->modalSubmitActionLabel('Eliminar')
-                    ->successNotificationTitle('Registro eliminado correctamente.')
-                    ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make()
+                        ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
+                    Tables\Actions\DeleteAction::make()
+                        ->modalHeading('Confirmar eliminación')
+                        ->modalDescription('Esta acción no se puede deshacer.')
+                        ->modalSubmitActionLabel('Eliminar')
+                        ->successNotificationTitle('Registro eliminado correctamente.')
+                        ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->label(''),
             ])
                     ->actionsColumnLabel('Acción')
                     ->actionsAlignment('center')

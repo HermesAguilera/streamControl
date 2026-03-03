@@ -69,12 +69,15 @@ class CuentasPorVencerResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->recordAction('ver')
             ->columns([
                 Tables\Columns\TextColumn::make('cliente_posicion')
                     ->label('#')
                     ->alignment('center')
                     ->rowIndex(),
-                Tables\Columns\TextColumn::make('cliente_nombre')->label('Nombre del cliente')->searchable(),
+                Tables\Columns\TextColumn::make('cliente_nombre')
+                    ->label('Nombre del cliente')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('cliente_telefono')
                     ->label('Teléfono')
                     ->searchable()
@@ -124,6 +127,19 @@ class CuentasPorVencerResource extends Resource
                     ->modalContent(fn (Perfil $record) => view('filament.modals.mensaje-por-vencer', [
                         'mensaje' => ClientMessageBuilder::buildExpiryMessage($record),
                     ])),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('ver')
+                        ->label('Ver')
+                        ->icon('heroicon-o-eye')
+                        ->modalHeading('Detalle del cliente')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Cerrar')
+                        ->modalContent(fn (Perfil $record) => view('filament.modals.detalle-cliente', [
+                            'perfil' => $record->loadMissing(['plataforma', 'cuenta']),
+                        ])),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->label(''),
             ])
                     ->actionsColumnLabel('Acción')
                     ->actionsAlignment('center')

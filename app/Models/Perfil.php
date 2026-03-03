@@ -23,7 +23,6 @@ class Perfil extends Model
         'proveedor_nombre',
         'correo_cuenta',
         'contrasena_cuenta',
-        'cliente_email',
         'fecha_inicio',
         'fecha_corte',
         'fecha_caducidad_cuenta',

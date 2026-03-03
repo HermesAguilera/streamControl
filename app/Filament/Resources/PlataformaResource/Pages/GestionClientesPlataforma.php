@@ -60,6 +60,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
     {
         return $table
             ->recordTitleAttribute('cliente_nombre')
+            ->recordAction('ver')
             ->modifyQueryUsing(fn ($query) => $query
                 ->orderByRaw('LOWER(TRIM(correo_cuenta)) asc')
                 ->orderByRaw('CAST(nombre_perfil AS UNSIGNED) asc')
@@ -86,11 +87,12 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                 Tables\Columns\TextColumn::make('contrasena_cuenta')
                     ->label('Contraseña')
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('cliente_nombre')->label('Nombre del cliente')->searchable(),
+                Tables\Columns\TextColumn::make('cliente_nombre')
+                    ->label('Nombre del cliente')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('cliente_telefono')
                     ->label('Número de teléfono')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('nombre_perfil')
                     ->label('Número de perfil')
                     ->searchable()
@@ -190,29 +192,42 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                         'mensaje' => $this->buildClientMessage($record),
                     ]))
                     ->action(fn () => null),
-                Tables\Actions\EditAction::make()
-                    ->successNotificationTitle('Cambios guardados correctamente.')
-                    ->visible(fn () => static::hasPermission('clientes.edit'))
-                    ->form(fn (Perfil $record): array => $this->clienteEditFormSchema($record))
-                    ->using(fn (Perfil $record, array $data): Perfil => $this->updateClientBundleFromEdit($record, $data)),
-                Tables\Actions\DeleteAction::make()
-                    ->visible(fn () => static::hasPermission('clientes.delete'))
-                    ->requiresConfirmation()
-                    ->modalHeading('Confirmar eliminación')
-                    ->modalDescription(function (Perfil $record): string {
-                        $total = $this->getClientBundleRecords($record)->count();
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('ver')
+                        ->label('Ver')
+                        ->icon('heroicon-o-eye')
+                        ->modalHeading('Detalle del cliente')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Cerrar')
+                        ->modalContent(fn (Perfil $record) => view('filament.modals.detalle-cliente', [
+                            'perfil' => $record->loadMissing(['plataforma', 'cuenta']),
+                        ])),
+                    Tables\Actions\EditAction::make()
+                        ->successNotificationTitle('Cambios guardados correctamente.')
+                        ->visible(fn () => static::hasPermission('clientes.edit'))
+                        ->form(fn (Perfil $record): array => $this->clienteEditFormSchema($record))
+                        ->using(fn (Perfil $record, array $data): Perfil => $this->updateClientBundleFromEdit($record, $data)),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn () => static::hasPermission('clientes.delete'))
+                        ->requiresConfirmation()
+                        ->modalHeading('Confirmar eliminación')
+                        ->modalDescription(function (Perfil $record): string {
+                            $total = $this->getClientBundleRecords($record)->count();
 
-                        return "Se eliminarán {$total} perfiles de este cliente. Esta acción no se puede deshacer.";
-                    })
-                    ->modalSubmitActionLabel('Eliminar')
-                    ->successNotificationTitle('Registro eliminado correctamente.')
-                    ->action(function (Perfil $record): void {
-                        DB::transaction(function () use ($record): void {
-                            $this->getClientBundleRecords($record)->each(fn (Perfil $perfil) => $perfil->delete());
-                        });
+                            return "Se eliminarán {$total} perfiles de este cliente. Esta acción no se puede deshacer.";
+                        })
+                        ->modalSubmitActionLabel('Eliminar')
+                        ->successNotificationTitle('Registro eliminado correctamente.')
+                        ->action(function (Perfil $record): void {
+                            DB::transaction(function () use ($record): void {
+                                $this->getClientBundleRecords($record)->each(fn (Perfil $perfil) => $perfil->delete());
+                            });
 
-                        $this->resetTransientCaches();
-                    }),
+                            $this->resetTransientCaches();
+                        }),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->label(''),
             ])
                     ->actionsColumnLabel('Acción')
                     ->actionsAlignment('center')

@@ -109,30 +109,34 @@ class UserResource extends Resource
                 ->formatStateUsing(fn (?string $state): string => static::getRoleLabel($state)),
             Tables\Columns\TextColumn::make('created_at')->since(),
         ])->actions([
-            Tables\Actions\Action::make('cambiarRol')
-                ->label('Cambiar rol')
-                ->icon('heroicon-o-shield-check')
-                ->visible(fn () => static::canManageRoles())
-                ->form([
-                    Forms\Components\Select::make('roles')
-                        ->label('Roles')
-                        ->multiple()
-                        ->required()
-                        ->preload()
-                        ->options(fn () => Role::query()
-                            ->where('empresa_id', auth()->user()?->empresa_id)
-                            ->get()
-                            ->mapWithKeys(fn ($role) => [
-                                $role->name => static::getRoleLabel($role->name),
-                            ])),
-                ])
-                ->fillForm(fn (User $record): array => [
-                    'roles' => $record->roles()->pluck('name')->all(),
-                ])
-                ->action(function (User $record, array $data): void {
-                    $record->syncRoles($data['roles']);
-                }),
-            Tables\Actions\EditAction::make(),
+            Tables\Actions\ActionGroup::make([
+                Tables\Actions\Action::make('cambiarRol')
+                    ->label('Cambiar rol')
+                    ->icon('heroicon-o-shield-check')
+                    ->visible(fn () => static::canManageRoles())
+                    ->form([
+                        Forms\Components\Select::make('roles')
+                            ->label('Roles')
+                            ->multiple()
+                            ->required()
+                            ->preload()
+                            ->options(fn () => Role::query()
+                                ->where('empresa_id', auth()->user()?->empresa_id)
+                                ->get()
+                                ->mapWithKeys(fn ($role) => [
+                                    $role->name => static::getRoleLabel($role->name),
+                                ])),
+                    ])
+                    ->fillForm(fn (User $record): array => [
+                        'roles' => $record->roles()->pluck('name')->all(),
+                    ])
+                    ->action(function (User $record, array $data): void {
+                        $record->syncRoles($data['roles']);
+                    }),
+                Tables\Actions\EditAction::make(),
+            ])
+                ->icon('heroicon-m-ellipsis-vertical')
+                ->label(''),
         ])
             ->actionsColumnLabel('Acción')
             ->actionsAlignment('center')

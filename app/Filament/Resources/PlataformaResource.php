@@ -79,12 +79,16 @@ class PlataformaResource extends Resource
             Tables\Columns\TextColumn::make('perfiles_count')->counts('perfiles')->label('Perfiles'),
             Tables\Columns\TextColumn::make('created_at')->since(),
         ])->actions([
-            Tables\Actions\Action::make('clientes')
-                ->label('Clientes')
-                ->icon('heroicon-o-users')
-                ->visible(fn () => static::hasPermission('clientes.view'))
-                ->url(fn (Plataforma $record): string => static::getUrl('clientes', ['record' => $record])),
-            Tables\Actions\EditAction::make(),
+            Tables\Actions\ActionGroup::make([
+                Tables\Actions\Action::make('clientes')
+                    ->label('Clientes')
+                    ->icon('heroicon-o-users')
+                    ->visible(fn () => static::hasPermission('clientes.view'))
+                    ->url(fn (Plataforma $record): string => static::getUrl('clientes', ['record' => $record])),
+                Tables\Actions\EditAction::make(),
+            ])
+                ->icon('heroicon-m-ellipsis-vertical')
+                ->label(''),
         ])
             ->actionsColumnLabel('Acción')
             ->actionsAlignment('center')

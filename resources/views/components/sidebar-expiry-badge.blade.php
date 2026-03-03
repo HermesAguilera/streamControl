@@ -75,4 +75,109 @@
         document.addEventListener('livewire:navigated', paintBadge);
         document.addEventListener('DOMContentLoaded', paintBadge);
     })();
+
+    (() => {
+        const CLOSE_DELAY_MS = 100;
+        const getSidebarElement = () => document.querySelector('.fi-main-sidebar, .fi-sidebar');
+        const getOverlayElement = () => document.querySelector('.fi-sidebar-close-overlay');
+        let closeTimeoutId = null;
+
+        const getSidebarStore = () => {
+            try {
+                return window.Alpine?.store('sidebar') ?? null;
+            } catch {
+                return null;
+            }
+        };
+
+        const isSidebarOpen = () => {
+            const store = getSidebarStore();
+
+            if (store && typeof store.isOpen !== 'undefined') {
+                return Boolean(store.isOpen);
+            }
+
+            return Boolean(getSidebarElement()?.classList.contains('fi-sidebar-open'));
+        };
+
+        const closeSidebar = () => {
+            const store = getSidebarStore();
+
+            if (typeof store?.close === 'function') {
+                store.close();
+            }
+
+            const overlay = getOverlayElement();
+
+            if (overlay) {
+                overlay.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            }
+
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        };
+
+        const closeSidebarWithDelay = () => {
+            if (closeTimeoutId) {
+                clearTimeout(closeTimeoutId);
+            }
+
+            closeTimeoutId = setTimeout(() => {
+                closeSidebar();
+            }, CLOSE_DELAY_MS);
+        };
+
+        const onOutsideInteraction = (event) => {
+            if (!isSidebarOpen()) {
+                return;
+            }
+
+            const target = event.target;
+            const sidebar = getSidebarElement();
+
+            if (!sidebar || !(target instanceof Element)) {
+                return;
+            }
+
+            const clickedInsideSidebar = sidebar.contains(target);
+
+            if (clickedInsideSidebar) {
+                return;
+            }
+
+            closeSidebarWithDelay();
+        };
+
+        const onSidebarNavigationClick = (event) => {
+            if (!isSidebarOpen()) {
+                return;
+            }
+
+            const target = event.target;
+
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            if (target.closest('.fi-main-sidebar a[href]')) {
+                closeSidebarWithDelay();
+            }
+        };
+
+        const collapseSidebarByDefault = () => {
+            const store = getSidebarStore();
+
+            if (typeof store?.close === 'function') {
+                store.close();
+            }
+        };
+
+        document.addEventListener('pointerdown', onOutsideInteraction, true);
+        document.addEventListener('touchstart', onOutsideInteraction, true);
+        document.addEventListener('click', onOutsideInteraction, true);
+        document.addEventListener('click', onSidebarNavigationClick, true);
+        document.addEventListener('DOMContentLoaded', collapseSidebarByDefault);
+        document.addEventListener('livewire:navigated', () => {
+            closeSidebarWithDelay();
+        });
+    })();
 </script>
