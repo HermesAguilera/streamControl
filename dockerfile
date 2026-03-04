@@ -22,9 +22,15 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+
+# Copia el .env local al contenedor (asegura que existe y tiene DB_CONNECTION=mysql)
+COPY .env .env
 COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Limpia cachés de configuración y vistas para que tome el .env correcto
+RUN php artisan optimize:clear
 
 EXPOSE 10000
 
