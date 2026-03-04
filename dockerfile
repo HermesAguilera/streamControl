@@ -1,7 +1,10 @@
+# Etapa base con PHP 8.2 CLI
 FROM php:8.2-cli
 
+# Establece el directorio de trabajo
 WORKDIR /var/www
 
+# Instala dependencias del sistema y extensiones PHP necesarias para Laravel
 RUN apt-get update && apt-get install -y \
     git unzip zip \
     libzip-dev \
@@ -11,7 +14,6 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
-        pdo \
         pdo_mysql \
         bcmath \
         zip \
@@ -20,18 +22,27 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Instala Composer desde la imagen oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-
-# Copia el .env local al contenedor (asegura que existe y tiene DB_CONNECTION=mysql)
-COPY .env .env
+# Copia solo los archivos necesarios del proyecto (sin .env)
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Instala dependencias de Composer (sin dev, optimizado)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Limpia cachés de configuración y vistas para que tome el .env correcto
-RUN php artisan optimize:clear
+# Genera APP_KEY si no existe (Render inyecta variables, pero por si acaso)
+RUN php artisan key:generate --force || true
 
+# Limpia cachés de configuración, rutas y vistas
+RUN php artisan config:clear \
+    && php artisan cache:clear \
+    && php artisan route:clear \
+    && php artisan view:clear \
+    && php artisan optimize
+
+# Expone el puerto que Render usa (Render asigna $PORT automáticamente)
 EXPOSE 10000
 
-CMD php artisan serve --host=0.0.0.0 --port=10000
+# Comando de inicio: sirve la app en el puerto que Render asigna
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
