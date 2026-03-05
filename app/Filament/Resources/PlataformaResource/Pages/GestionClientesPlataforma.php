@@ -104,10 +104,10 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ->label('Nombre del cliente')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('cliente_telefono')
-                    ->label('# teléfono')
+                    ->label('Telefono')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nombre_perfil')
-                    ->label('# de perfiles')
+                    ->label('N° de perfiles')
                     ->searchable()
                     ->formatStateUsing(function ($state): string {
                         $value = (string) $state;
@@ -127,7 +127,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->date(),
                 Tables\Columns\TextColumn::make('dias_restantes')
-                    ->label('Countdown')
+                    ->label('Quedan (días)')
                     ->alignment('center')
                     ->badge()
                     ->color(fn ($state) => $state === null ? 'gray' : ($state <= 0 ? 'danger' : ($state <= 5 ? 'warning' : 'success')))

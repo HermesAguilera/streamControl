@@ -38,7 +38,7 @@ class PerfilesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('fecha_corte')->label('Fecha corte')->toggleable(isToggledHiddenByDefault: true)->date(),
                 Tables\Columns\TextColumn::make('fecha_caducidad_cuenta')->label('Fecha caducidad')->date(),
                 Tables\Columns\TextColumn::make('dias_restantes')
-                    ->label('Cuenta regresiva (días)')
+                    ->label('Quedan (días)')
                     ->alignment('center')
                     ->badge()
                     ->color(fn ($state) => $state === null ? 'gray' : ($state <= 0 ? 'danger' : ($state <= 5 ? 'warning' : 'success')))
