@@ -35,6 +35,9 @@ php artisan migrate --force || echo "migrate failed or DB not ready"
 # Publish filament assets (safe to run)
 php artisan filament:assets --no-interaction || true
 
+# Seed admin user (firstOrCreate inside seeder prevents duplicates)
+php artisan db:seed --class=AdminUserSeeder || echo "seeder failed or DB not ready"
+
 # Cache optimizations (ignore failures if DB driver causes issues)
 php artisan config:cache || true
 php artisan route:cache || true
