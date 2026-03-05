@@ -32,13 +32,14 @@ fi
 # Run migrations (don't fail the container startup if migrations fail)
 php artisan migrate --force || echo "migrate failed or DB not ready"
 
-# Publish filament assets (safe to run)
-php artisan filament:assets --no-interaction || true
+# Upgrade filament assets/components (safe to run)
+php artisan filament:upgrade || true
 
 # Seed admin user (firstOrCreate inside seeder prevents duplicates)
-php artisan db:seed --class=AdminUserSeeder || echo "seeder failed or DB not ready"
+php artisan db:seed --force --class=AdminUserSeeder || echo "seeder failed or DB not ready"
 
-# Cache optimizations (ignore failures if DB driver causes issues)
+# Clear then rebuild framework caches
+php artisan optimize:clear || true
 php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
