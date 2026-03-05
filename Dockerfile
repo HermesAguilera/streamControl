@@ -45,8 +45,10 @@ RUN chown -R www-data:www-data storage bootstrap/cache public && chmod -R 775 st
 
 EXPOSE 10000
 
-# Copiar script que espera la DB y arranca la app
-COPY docker/wait-and-run.sh /usr/local/bin/wait-and-run.sh
-RUN chmod +x /usr/local/bin/wait-and-run.sh
-
-CMD ["/usr/local/bin/wait-and-run.sh"]
+CMD php artisan migrate --force && \
+    php artisan db:seed --force && \
+    php artisan optimize:clear && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
