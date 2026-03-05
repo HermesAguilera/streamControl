@@ -13,18 +13,28 @@ WORKDIR /var/www
 
 ## Dependencias del sistema (no interactivas, paquetes compatibles)
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates gnupg curl build-essential \
-        git unzip zip \
-        libzip-dev zlib1g-dev \
+
+# Actualizar índices y comprobar disponibilidad de paquetes antes de instalar
+RUN apt-get update && apt-get -y upgrade || true
+RUN apt-cache policy libpng-dev libjpeg-dev libfreetype6-dev libicu-dev libpq-dev zlib1g-dev || true
+
+# Instalar herramientas básicas primero (ayuda a aislar errores)
+RUN apt-get install -y --no-install-recommends \
+        ca-certificates gnupg curl \
+        git unzip zip netcat procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar librerías de desarrollo por separado
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential libzip-dev zlib1g-dev \
         libpng-dev libjpeg-dev libfreetype6-dev \
-        libicu-dev libpq-dev netcat procps \
+        libicu-dev libpq-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_pgsql pgsql bcmath zip intl gd \
     && apt-get purge -y --auto-remove build-essential \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
 ENV DEBIAN_FRONTEND=dialog
 
 # Composer
