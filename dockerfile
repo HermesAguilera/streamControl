@@ -6,6 +6,8 @@ COPY package*.json vite.config.js ./
 # Use npm install with legacy-peer-deps to avoid peer-deps resolution failures
 RUN npm install --legacy-peer-deps --silent
 COPY resources ./resources
+COPY public ./public
+RUN mkdir -p public/build
 RUN npm run build
 ENV NODE_ENV=production
 
