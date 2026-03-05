@@ -1,48 +1,44 @@
-# Etapa base con PHP 8.2 CLI
-FROM php:8.2-cli
+## Etapa 1: builder front-end (Node)
+FROM node:18-alpine AS node_builder
+WORKDIR /app
+COPY package*.json vite.config.js ./
+RUN npm ci
+COPY resources ./resources
+RUN npm run build
 
-# Establece el directorio de trabajo
+## Etapa final: PHP
+FROM php:8.2-cli
 WORKDIR /var/www
 
-# Instala dependencias del sistema y extensiones PHP necesarias (Añadido libpq-dev para Postgres)
+# Dependencias del sistema (incluye libpq-dev y netcat para espera de DB)
 RUN apt-get update && apt-get install -y \
-    git unzip zip \
-    libzip-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libicu-dev \
-    libpq-dev \
+    git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libicu-dev libpq-dev netcat \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        pdo_pgsql \
-        pgsql \
-        bcmath \
-        zip \
-        intl \
-        gd \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-install pdo_pgsql pgsql bcmath zip intl gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instala Composer
+# Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copia los archivos del proyecto
+# Copiar código de la aplicación
 COPY . .
 
-# Instala dependencias (Sin ejecutar scripts de artisan todavía)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# Copiar assets generados por el builder (Vite -> public/build)
+COPY --from=node_builder /app/public/build ./public/build
 
-# Damos permisos a las carpetas de almacenamiento (Vital para que no de error 500)
-RUN chmod -R 775 storage bootstrap/cache && chown -R www-data:www-data /var/www
+# Instalar dependencias PHP
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Expone el puerto
+# Publicar assets de Filament (no necesita la DB)
+RUN php artisan filament:assets --no-interaction || true
+
+# Permisos
+RUN chown -R www-data:www-data storage bootstrap/cache public && chmod -R 775 storage bootstrap/cache
+
 EXPOSE 10000
 
-# COMANDO DE INICIO: Aquí es donde ocurre la magia.
-# Ejecutamos las migraciones y la limpieza cuando la DB ya está conectada.
-CMD php artisan migrate --force && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# Copiar script que espera la DB y arranca la app
+COPY docker/wait-and-run.sh /usr/local/bin/wait-and-run.sh
+RUN chmod +x /usr/local/bin/wait-and-run.sh
+
+CMD ["/usr/local/bin/wait-and-run.sh"]
