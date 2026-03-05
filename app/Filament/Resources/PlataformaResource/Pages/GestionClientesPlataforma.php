@@ -51,6 +51,19 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         return 'Clientes de ' . $this->getRecord()->nombre;
     }
 
+    public function ver(Perfil|int|string|null $record = null): void
+    {
+        if ($record instanceof Perfil) {
+            $record = $record->getKey();
+        }
+
+        if (blank($record)) {
+            return;
+        }
+
+        $this->mountTableAction('ver', (string) $record);
+    }
+
     public function form(Form $form): Form
     {
         return $form->schema($this->clienteFormSchema());
