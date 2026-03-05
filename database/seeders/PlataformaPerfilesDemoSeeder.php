@@ -49,13 +49,6 @@ class PlataformaPerfilesDemoSeeder extends Seeder
                 $clienteNombre = null;
                 $clienteTelefono = null;
 
-                if ($asignado) {
-                    $nombre = $nombres[array_rand($nombres)];
-                    $apellido = $apellidos[array_rand($apellidos)];
-                    $clienteNombre = "{$nombre} {$apellido}";
-                    $clienteTelefono = '9' . random_int(100, 999) . '-' . random_int(1000, 9999);
-                }
-
                 Perfil::query()->create([
                     'plataforma_id' => $plataforma->id,
                     'nombre_perfil' => $nombrePerfil,
