@@ -25,7 +25,7 @@ RUN apt-cache policy libpng-dev libjpeg-dev libfreetype6-dev libicu-dev libpq-de
 # Instalar herramientas básicas primero (ayuda a aislar errores)
 RUN apt-get install -y --no-install-recommends \
         ca-certificates gnupg curl \
-        git unzip zip netcat procps \
+    git unzip zip netcat-openbsd procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar librerías de desarrollo por separado
