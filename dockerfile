@@ -11,12 +11,21 @@ RUN npm run build
 FROM php:8.2-cli
 WORKDIR /var/www
 
-# Dependencias del sistema (incluye libpq-dev y netcat para espera de DB)
-RUN apt-get update && apt-get install -y \
-    git unzip zip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libicu-dev libpq-dev netcat \
+## Dependencias del sistema (no interactivas, paquetes compatibles)
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates apt-transport-https gnupg curl build-essential \
+        git unzip zip \
+        libzip-dev zlib1g-dev \
+        libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+        libicu-dev libpq-dev netcat procps \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_pgsql pgsql bcmath zip intl gd \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-install -j"$(nproc)" \
+        pdo_pgsql pgsql bcmath zip intl gd \
+    && apt-get purge -y --auto-remove build-essential \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+ENV DEBIAN_FRONTEND=dialog
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
