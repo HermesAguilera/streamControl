@@ -15,10 +15,10 @@ WORKDIR /var/www
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates apt-transport-https gnupg curl build-essential \
+        ca-certificates gnupg curl build-essential \
         git unzip zip \
         libzip-dev zlib1g-dev \
-        libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+        libpng-dev libjpeg-dev libfreetype6-dev \
         libicu-dev libpq-dev netcat procps \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
