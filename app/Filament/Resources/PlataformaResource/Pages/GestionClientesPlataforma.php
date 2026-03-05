@@ -76,7 +76,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
             ->recordAction('ver')
             ->modifyQueryUsing(fn ($query) => $query
                 ->orderByRaw('LOWER(TRIM(correo_cuenta)) asc')
-                ->orderByRaw('CAST(nombre_perfil AS UNSIGNED) asc')
+                ->orderByRaw($this->getNombrePerfilOrderExpression())
                 ->orderBy('id', 'asc'))
             ->recordClasses(fn (Perfil $record): ?string => $this->isClientDistributedAcrossAccounts($record)
                 ? 'bg-warning-50/40 dark:bg-warning-900/20'
@@ -245,6 +245,17 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ->actionsColumnLabel('Acción')
                     ->actionsAlignment('center')
             ->bulkActions([]);
+    }
+
+    protected function getNombrePerfilOrderExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'pgsql') {
+            return "COALESCE(NULLIF(regexp_replace(nombre_perfil, '[^0-9]', '', 'g'), ''), '0')::int asc";
+        }
+
+        return 'CAST(nombre_perfil AS UNSIGNED) asc';
     }
 
     protected function clienteFormSchema(?Perfil $contextRecord = null): array
