@@ -1,16 +1,3 @@
-## Etapa 1: builder front-end (Node)
-FROM node:18-alpine AS node_builder
-WORKDIR /app
-ENV NODE_ENV=development
-COPY package*.json vite.config.js ./
-# Use npm install with legacy-peer-deps to avoid peer-deps resolution failures
-RUN npm install --legacy-peer-deps --silent
-COPY resources ./resources
-COPY public ./public
-RUN mkdir -p public/build
-RUN npm run build
-ENV NODE_ENV=production
-
 ## Etapa final: PHP
 FROM php:8.2-cli
 WORKDIR /var/www
@@ -46,9 +33,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copiar código de la aplicación
 COPY . .
-
-# Copiar assets generados por el builder (Vite -> public/build)
-COPY --from=node_builder /app/public/build ./public/build
 
 # Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
