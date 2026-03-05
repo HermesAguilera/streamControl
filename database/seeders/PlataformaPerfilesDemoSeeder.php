@@ -27,42 +27,6 @@ class PlataformaPerfilesDemoSeeder extends Seeder
             'Castro', 'Mejía', 'Figueroa', 'Bonilla', 'Chávez', 'Aguilar', 'Suazo', 'Vargas', 'Reyes', 'Rivas',
         ];
 
-        foreach ($distribution as $platformName => $totalPerfiles) {
-            $plataforma = Plataforma::query()->where('nombre', $platformName)->first();
-
-            if (! $plataforma) {
-                continue;
-            }
-
-            Perfil::query()->where('plataforma_id', $plataforma->id)->delete();
-
-            for ($i = 1; $i <= $totalPerfiles; $i++) {
-                $asignado = random_int(1, 100) <= 82;
-
-                $fechaInicio = Carbon::today()->subDays(random_int(2, 26));
-                $fechaCorte = (clone $fechaInicio)->addDays(30);
-                $fechaCaducidad = (clone $fechaCorte)->addDays(random_int(-3, 6));
-
-                $nombrePerfil = (string) $i;
-                $correoCuenta = strtolower(str_replace(' ', '', $platformName)) . $i . '@stream.local';
-
-                $clienteNombre = null;
-                $clienteTelefono = null;
-
-                Perfil::query()->create([
-                    'plataforma_id' => $plataforma->id,
-                    'nombre_perfil' => $nombrePerfil,
-                    'pin' => (string) random_int(1000, 9999),
-                    'cliente_nombre' => $clienteNombre,
-                    'cliente_telefono' => $clienteTelefono,
-                    'proveedor_nombre' => 'Proveedor ' . $platformName,
-                    'correo_cuenta' => $correoCuenta,
-                    'contrasena_cuenta' => 'Pass' . random_int(1000, 9999),
-                    'fecha_inicio' => $fechaInicio,
-                    'fecha_corte' => $fechaCorte,
-                    'fecha_caducidad_cuenta' => $fechaCaducidad,
-                ]);
-            }
-        }
+        // Se eliminó la creación de perfiles y clientes demo para evitar datos de ejemplo en producción.
     }
 }
