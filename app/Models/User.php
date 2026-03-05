@@ -10,10 +10,12 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
 
 
-class User extends Authenticatable //implements FilamentUser
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
@@ -54,10 +56,10 @@ class User extends Authenticatable //implements FilamentUser
         ];
     }
 
-    /*public function canAccessPanel(Panel $panel): bool
+    public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole(['admin', 'super_admin', 'editor', 'viewer']);
-    }*/
+        return $this->hasRole('admin');
+    }
 
     public function getFilamentAvatarUrl(): ?string
     {
