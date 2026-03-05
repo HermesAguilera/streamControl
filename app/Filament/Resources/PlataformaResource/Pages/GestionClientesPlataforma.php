@@ -104,10 +104,10 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ->label('Nombre del cliente')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('cliente_telefono')
-                    ->label('Número de teléfono')
+                    ->label('# teléfono')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nombre_perfil')
-                    ->label('Número de perfil')
+                    ->label('# de perfiles')
                     ->searchable()
                     ->formatStateUsing(function ($state): string {
                         $value = (string) $state;
@@ -127,7 +127,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->date(),
                 Tables\Columns\TextColumn::make('dias_restantes')
-                    ->label('Cuenta regresiva')
+                    ->label('Countdown')
                     ->alignment('center')
                     ->badge()
                     ->color(fn ($state) => $state === null ? 'gray' : ($state <= 0 ? 'danger' : ($state <= 5 ? 'warning' : 'success')))
@@ -244,7 +244,66 @@ class GestionClientesPlataforma extends ManageRelatedRecords
             ])
                     ->actionsColumnLabel('Acción')
                     ->actionsAlignment('center')
-            ->bulkActions([]);
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('eliminarClientesSeleccionados')
+                        ->label('Eliminar clientes')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->visible(fn () => static::hasPermission('clientes.delete'))
+                        ->requiresConfirmation()
+                        ->modalHeading('Eliminar clientes seleccionados')
+                        ->modalDescription('Se eliminaran los clientes seleccionados y todos sus perfiles asociados. Esta accion no se puede deshacer.')
+                        ->deselectRecordsAfterCompletion()
+                        ->successNotificationTitle('Clientes eliminados correctamente.')
+                        ->action(function (Collection $records): void {
+                            $this->eliminarClientesSeleccionados($records);
+                        }),
+                ]),
+            ]);
+    }
+
+    protected function eliminarClientesSeleccionados(Collection $records): void
+    {
+        if ($records->isEmpty()) {
+            return;
+        }
+
+        $idsParaEliminar = [];
+        $clientesYaAgrupados = [];
+
+        foreach ($records as $record) {
+            if (! $record instanceof Perfil) {
+                continue;
+            }
+
+            $bundleKey = $this->resolveClientBundleCacheKey($record);
+
+            if (isset($clientesYaAgrupados[$bundleKey])) {
+                continue;
+            }
+
+            $clientesYaAgrupados[$bundleKey] = true;
+
+            $bundleIds = $this->getClientBundleRecords($record)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $idsParaEliminar = array_merge($idsParaEliminar, $bundleIds);
+        }
+
+        $idsParaEliminar = array_values(array_unique($idsParaEliminar));
+
+        if ($idsParaEliminar === []) {
+            return;
+        }
+
+        DB::transaction(function () use ($idsParaEliminar): void {
+            Perfil::query()->whereIn('id', $idsParaEliminar)->delete();
+        });
+
+        $this->resetTransientCaches();
     }
 
     protected function getNombrePerfilOrderExpression(): string
