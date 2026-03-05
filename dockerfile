@@ -1,11 +1,13 @@
 ## Etapa 1: builder front-end (Node)
 FROM node:18-alpine AS node_builder
 WORKDIR /app
+ENV NODE_ENV=development
 COPY package*.json vite.config.js ./
 # Use npm install with legacy-peer-deps to avoid peer-deps resolution failures
 RUN npm install --legacy-peer-deps --silent
 COPY resources ./resources
 RUN npm run build
+ENV NODE_ENV=production
 
 ## Etapa final: PHP
 FROM php:8.2-cli
