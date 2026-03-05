@@ -2,7 +2,8 @@
 FROM node:18-alpine AS node_builder
 WORKDIR /app
 COPY package*.json vite.config.js ./
-RUN npm ci
+# Use npm install when package-lock.json is not present (safer in CI without lockfile)
+RUN npm install --silent
 COPY resources ./resources
 RUN npm run build
 
