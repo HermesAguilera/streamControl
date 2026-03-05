@@ -70,11 +70,14 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $adminUser = User::firstOrCreate(
-            ['email' => 'admin@streaming.local'],
+        $adminEmail = env('DEFAULT_ADMIN_EMAIL', 'admin@streaming.local');
+        $adminPassword = env('DEFAULT_ADMIN_PASSWORD', 'password');
+
+        $adminUser = User::updateOrCreate(
+            ['email' => $adminEmail],
             [
                 'name' => 'Administrador',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($adminPassword),
                 'empresa_id' => $empresa->id,
                 'persona_id' => $personaAdmin->id,
             ]
