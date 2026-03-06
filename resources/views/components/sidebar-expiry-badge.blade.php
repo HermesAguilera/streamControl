@@ -1,15 +1,34 @@
 @php
     $badge = \App\Filament\Resources\CuentasPorVencerResource::getNavigationBadge();
     $targetPath = parse_url(\App\Filament\Resources\CuentasPorVencerResource::getUrl(), PHP_URL_PATH) ?: '';
+    $reportedBadge = \App\Filament\Resources\CuentaReportadaResource::getNavigationBadge();
+    $reportedTargetPath = parse_url(\App\Filament\Resources\CuentaReportadaResource::getUrl(), PHP_URL_PATH) ?: '';
 @endphp
 
 <script>
     (() => {
         const badgeValue = @js($badge);
         const targetPath = @js($targetPath);
-        const badgeId = 'clientes-por-vencer-floating-badge';
+        const reportedBadgeValue = @js($reportedBadge);
+        const reportedTargetPath = @js($reportedTargetPath);
 
-        const paintBadge = () => {
+        const isSidebarCollapsed = () => {
+            try {
+                const store = window.Alpine?.store('sidebar');
+
+                if (store && typeof store.isOpen !== 'undefined') {
+                    return !Boolean(store.isOpen);
+                }
+            } catch {
+                // Fallback to class check.
+            }
+
+            const sidebar = document.querySelector('.fi-main-sidebar, .fi-sidebar');
+
+            return sidebar ? !sidebar.classList.contains('fi-sidebar-open') : false;
+        };
+
+        const paintBadge = ({ badgeValue, targetPath, badgeId, ariaLabel, background, onlyWhenCollapsed = false }) => {
             const navLink = Array.from(document.querySelectorAll('aside a[href]'))
                 .find((link) => {
                     try {
@@ -31,8 +50,9 @@
             }
 
             const existing = wrapper.querySelector(`#${badgeId}`);
+            const shouldDisplay = !onlyWhenCollapsed || isSidebarCollapsed();
 
-            if (!badgeValue) {
+            if (!badgeValue || !shouldDisplay) {
                 if (existing) {
                     existing.remove();
                 }
@@ -46,7 +66,7 @@
             const badge = existing || document.createElement('span');
             badge.id = badgeId;
             badge.textContent = String(badgeValue);
-            badge.setAttribute('aria-label', `${badgeValue} clientes por vencer`);
+            badge.setAttribute('aria-label', `${badgeValue} ${ariaLabel}`);
             badge.style.position = 'absolute';
             badge.style.top = '2px';
             badge.style.right = '6px';
@@ -60,7 +80,7 @@
             badge.style.fontSize = '11px';
             badge.style.fontWeight = '700';
             badge.style.lineHeight = '1';
-            badge.style.background = '#ef4444';
+            badge.style.background = background;
             badge.style.color = '#fff';
             badge.style.boxShadow = '0 2px 6px rgba(0,0,0,.35)';
             badge.style.pointerEvents = 'none';
@@ -71,9 +91,28 @@
             }
         };
 
-        paintBadge();
-        document.addEventListener('livewire:navigated', paintBadge);
-        document.addEventListener('DOMContentLoaded', paintBadge);
+        const paintAllBadges = () => {
+            paintBadge({
+                badgeValue,
+                targetPath,
+                badgeId: 'clientes-por-vencer-floating-badge',
+                ariaLabel: 'clientes por vencer',
+                background: '#ef4444',
+            });
+
+            paintBadge({
+                badgeValue: reportedBadgeValue,
+                targetPath: reportedTargetPath,
+                badgeId: 'cuentas-reportadas-floating-badge',
+                ariaLabel: 'cuentas reportadas en proceso',
+                background: '#ef4444',
+                onlyWhenCollapsed: true,
+            });
+        };
+
+        paintAllBadges();
+        document.addEventListener('livewire:navigated', paintAllBadges);
+        document.addEventListener('DOMContentLoaded', paintAllBadges);
     })();
 
     (() => {

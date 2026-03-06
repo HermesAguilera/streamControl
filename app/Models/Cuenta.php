@@ -36,4 +36,9 @@ class Cuenta extends Model
     {
         return $this->hasMany(Perfil::class);
     }
+
+    public function configuracionPerfiles(): HasMany
+    {
+        return $this->hasMany(CuentaPerfil::class)->orderBy('numero_perfil');
+    }
 }

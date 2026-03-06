@@ -99,3 +99,9 @@
     justify-content: flex-start;
     padding-left: 0.55rem;
 }
+
+/* Keep navigation badges visible while sidebar is collapsed. */
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-button > span:not(.fi-sidebar-item-label) {
+    display: inline-flex !important;
+    margin-left: auto;
+}

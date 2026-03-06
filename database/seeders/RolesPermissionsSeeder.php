@@ -31,6 +31,9 @@ class RolesPermissionsSeeder extends Seeder
             'cuentas.create',
             'cuentas.edit',
             'cuentas.delete',
+            'cuentas_reportadas.view',
+            'cuentas_reportadas.solve',
+            'cuentas_reportadas.delete',
             'users.view',
             'users.create',
             'users.edit',
@@ -66,6 +69,8 @@ class RolesPermissionsSeeder extends Seeder
             'clientes.create',
             'clientes.edit',
             'cuentas.view',
+            'cuentas_reportadas.view',
+            'cuentas_reportadas.solve',
         ]);
     }
 }

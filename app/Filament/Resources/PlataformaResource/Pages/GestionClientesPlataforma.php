@@ -4,6 +4,8 @@ namespace App\Filament\Resources\PlataformaResource\Pages;
 
 use App\Filament\Resources\PlataformaResource;
 use App\Models\Cuenta;
+use App\Models\CuentaPerfil;
+use App\Models\CuentaReportada;
 use App\Models\Perfil;
 use App\Support\ClientMessageBuilder;
 use App\Support\UserPreferenceState;
@@ -27,6 +29,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
     protected array $clientDistributedCache = [];
     protected bool $clientProfilesCacheLoaded = false;
     protected ?bool $shouldColorizeAccounts = null;
+    protected array $cuentaPinMap = [];
 
     protected static string $resource = PlataformaResource::class;
 
@@ -51,19 +54,6 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         return 'Clientes de ' . $this->getRecord()->nombre;
     }
 
-    public function ver(Perfil|int|string|null $record = null): void
-    {
-        if ($record instanceof Perfil) {
-            $record = $record->getKey();
-        }
-
-        if (blank($record)) {
-            return;
-        }
-
-        $this->mountTableAction('ver', (string) $record);
-    }
-
     public function form(Form $form): Form
     {
         return $form->schema($this->clienteFormSchema());
@@ -73,7 +63,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
     {
         return $table
             ->recordTitleAttribute('cliente_nombre')
-            ->recordAction('ver')
+            ->recordAction('detalleCliente')
             ->modifyQueryUsing(fn ($query) => $query
                 ->orderByRaw('LOWER(TRIM(correo_cuenta)) asc')
                 ->orderByRaw($this->getNombrePerfilOrderExpression())
@@ -107,7 +97,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ->label('Telefono')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nombre_perfil')
-                    ->label('N° de perfiles')
+                    ->label('Numero de Perfil')
                     ->searchable()
                     ->formatStateUsing(function ($state): string {
                         $value = (string) $state;
@@ -118,6 +108,9 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
                         return $value;
                     }),
+                Tables\Columns\TextColumn::make('pin')
+                    ->label('Pin de Perfil')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('fecha_inicio')
                     ->label('Fecha inicio')
                     ->toggleable(isToggledHiddenByDefault: true)
@@ -166,8 +159,9 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                                 $perfilCreado = null;
 
                                 foreach ($assignments as $assignment) {
-                                    $payload = $this->hydratePayloadWithCuentaData($data, $assignment['cuenta']);
-                                    $payload['nombre_perfil'] = (string) $assignment['slot'];
+                                    $slot = (int) $assignment['slot'];
+                                    $payload = $this->hydratePayloadWithCuentaData($data, $assignment['cuenta'], $slot);
+                                    $payload['nombre_perfil'] = (string) $slot;
 
                                     $perfil = Perfil::create($payload);
 
@@ -206,8 +200,8 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                     ]))
                     ->action(fn () => null),
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('ver')
-                        ->label('Ver')
+                    Tables\Actions\Action::make('detalleCliente')
+                        ->label('Detalle del cliente')
                         ->icon('heroicon-o-eye')
                         ->modalHeading('Detalle del cliente')
                         ->modalSubmitAction(false)
@@ -215,6 +209,33 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                         ->modalContent(fn (Perfil $record) => view('filament.modals.detalle-cliente', [
                             'perfil' => $record->loadMissing(['plataforma', 'cuenta']),
                         ])),
+                    Tables\Actions\Action::make('reportarCuenta')
+                        ->label('Reportar cuenta')
+                        ->icon('heroicon-o-flag')
+                        ->color('danger')
+                        ->modalHeading('Reportar cuenta')
+                        ->modalDescription('Ingresa el motivo del reporte para enviarlo al modulo Cuentas Reportadas.')
+                        ->modalSubmitActionLabel('Enviar')
+                        ->form([
+                            Forms\Components\Textarea::make('descripcion')
+                                ->label('Descripcion')
+                                ->rows(4)
+                                ->required()
+                                ->maxLength(1500),
+                        ])
+                        ->successNotificationTitle('Cuenta reportada correctamente.')
+                        ->action(function (Perfil $record, array $data): void {
+                            CuentaReportada::query()->create([
+                                'perfil_id' => $record->id,
+                                'cuenta_id' => $record->cuenta_id,
+                                'plataforma_id' => $record->plataforma_id,
+                                'cuenta' => (string) ($record->correo_cuenta ?? '-'),
+                                'numero_perfil' => (string) ($record->nombre_perfil ?? '-'),
+                                'descripcion' => trim((string) ($data['descripcion'] ?? '')),
+                                'estado' => 'en_proceso',
+                                'reportado_por' => auth()->id(),
+                            ]);
+                        }),
                     Tables\Actions\EditAction::make()
                         ->successNotificationTitle('Cambios guardados correctamente.')
                         ->visible(fn () => static::hasPermission('clientes.edit'))
@@ -342,7 +363,6 @@ class GestionClientesPlataforma extends ManageRelatedRecords
                 ->required()
                 ->live(debounce: 300)
                 ->helperText('Se muestran cuentas con cupos disponibles. En edición, la cuenta actual permanece visible aunque no tenga cupos.'),
-            Forms\Components\TextInput::make('pin')->label('PIN')->maxLength(20),
             Forms\Components\DatePicker::make('fecha_caducidad_cuenta')->label('Fecha caducidad')->required(),
         ];
     }
@@ -605,8 +625,9 @@ class GestionClientesPlataforma extends ManageRelatedRecords
             $result = null;
 
             foreach ($assignments as $index => $assignment) {
-                $payload = $this->hydratePayloadWithCuentaData($data, $assignment['cuenta']);
-                $payload['nombre_perfil'] = (string) $assignment['slot'];
+                $slot = (int) $assignment['slot'];
+                $payload = $this->hydratePayloadWithCuentaData($data, $assignment['cuenta'], $slot);
+                $payload['nombre_perfil'] = (string) $slot;
 
                 $perfil = $bundleRecords->get($index);
 
@@ -777,6 +798,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         $this->clientDistributedCache = [];
         $this->clientProfilesCacheLoaded = false;
         $this->shouldColorizeAccounts = null;
+        $this->cuentaPinMap = [];
     }
 
     protected function ensureClientProfilesCacheLoaded(): void
@@ -1118,7 +1140,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
     protected function getAvailableSlotsForCuenta(Cuenta $cuenta, ?Collection $excludedIds = null, ?array $occupancy = null): int
     {
-        $limite = (int) ($this->getRecord()->perfiles_por_cuenta ?: 5);
+        $limite = $this->getCuentaProfilesLimit($cuenta);
         $occupancy ??= $this->buildAccountOccupancyIndex($excludedIds);
         $correo = $this->normalizeAccountEmail((string) $cuenta->correo);
         $used = (int) ($occupancy[$correo]['total'] ?? 0);
@@ -1128,13 +1150,13 @@ class GestionClientesPlataforma extends ManageRelatedRecords
 
     protected function resolveAssignmentsAcrossAccounts(int $prioritizedCuentaId, int $cantidad, ?Collection $excludedIds = null, bool $forUpdate = false): array
     {
-        $limite = (int) ($this->getRecord()->perfiles_por_cuenta ?: 5);
         $cuentas = $this->getOrderedCuentasForAllocation($prioritizedCuentaId);
         $occupancy = $this->buildAccountOccupancyIndex($excludedIds, $forUpdate);
 
         $assignments = [];
 
         foreach ($cuentas as $cuenta) {
+            $limite = $this->getCuentaProfilesLimit($cuenta);
             $correo = $this->normalizeAccountEmail((string) $cuenta->correo);
             $usedSlots = $occupancy[$correo]['numericSlots'] ?? collect();
 
@@ -1158,7 +1180,7 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         ]);
     }
 
-    protected function hydratePayloadWithCuentaData(array $data, Cuenta $cuenta): array
+    protected function hydratePayloadWithCuentaData(array $data, Cuenta $cuenta, ?int $slot = null): array
     {
         $payload = $data;
         $payload['cuenta_id'] = $cuenta->id;
@@ -1168,6 +1190,41 @@ class GestionClientesPlataforma extends ManageRelatedRecords
         $payload['fecha_inicio'] = $cuenta->fecha_inicio?->toDateString();
         $payload['fecha_corte'] = $cuenta->fecha_corte?->toDateString();
 
+        if ($slot !== null && $slot > 0) {
+            $payload['pin'] = $this->getPinForCuentaSlot((int) $cuenta->id, $slot);
+        }
+
         return $payload;
+    }
+
+    protected function getCuentaProfilesLimit(Cuenta $cuenta): int
+    {
+        $configured = CuentaPerfil::query()
+            ->where('cuenta_id', $cuenta->id)
+            ->count();
+
+        if ($configured > 0) {
+            return $configured;
+        }
+
+        return (int) ($this->getRecord()->perfiles_por_cuenta ?: 5);
+    }
+
+    protected function getPinForCuentaSlot(int $cuentaId, int $slot): ?string
+    {
+        if (! isset($this->cuentaPinMap[$cuentaId])) {
+            $this->cuentaPinMap[$cuentaId] = CuentaPerfil::query()
+                ->where('cuenta_id', $cuentaId)
+                ->pluck('pin', 'numero_perfil')
+                ->toArray();
+        }
+
+        $pin = $this->cuentaPinMap[$cuentaId][$slot] ?? null;
+
+        if (blank($pin)) {
+            return null;
+        }
+
+        return (string) $pin;
     }
 }

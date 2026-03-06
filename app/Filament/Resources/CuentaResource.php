@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CuentaResource\Pages;
 use App\Models\Cuenta;
 use Filament\Forms;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -79,7 +81,84 @@ class CuentaResource extends Resource
             Forms\Components\DatePicker::make('fecha_corte')
                 ->label('Fecha de corte')
                 ->required(),
+            Forms\Components\TextInput::make('cantidad_perfiles')
+                ->label('Cantidad de Perfiles')
+                ->numeric()
+                ->minValue(1)
+                ->maxValue(20)
+                ->default(5)
+                ->required()
+                ->live(debounce: 200)
+                ->dehydrated(false)
+                ->afterStateHydrated(function (?Cuenta $record, Set $set, ?string $state): void {
+                    $cantidad = (int) ($state ?: 0);
+
+                    if ($cantidad <= 0) {
+                        $cantidad = $record?->configuracionPerfiles()?->count() ?: 5;
+                        $set('cantidad_perfiles', $cantidad);
+                    }
+
+                    $set('configuracionPerfiles', static::buildProfileConfigState($cantidad, $record?->configuracionPerfiles?->toArray() ?: []));
+                })
+                ->afterStateUpdated(function ($state, Get $get, Set $set): void {
+                    $cantidad = max((int) $state, 1);
+                    $actual = $get('configuracionPerfiles');
+
+                    $set('configuracionPerfiles', static::buildProfileConfigState($cantidad, is_array($actual) ? $actual : []));
+                }),
+            Forms\Components\Repeater::make('configuracionPerfiles')
+                ->label('Perfiles de la Cuenta')
+                ->relationship('configuracionPerfiles')
+                ->schema([
+                    Forms\Components\Hidden::make('numero_perfil')
+                        ->required()
+                        ->dehydrated(),
+                    Forms\Components\Placeholder::make('perfil_label')
+                        ->label('Perfil')
+                        ->content(fn (Get $get): string => 'Perfil ' . ((int) ($get('numero_perfil') ?: 0))),
+                    Forms\Components\TextInput::make('pin')
+                        ->label('PIN')
+                        ->maxLength(20),
+                ])
+                ->columns(2)
+                ->addable(false)
+                ->deletable(false)
+                ->reorderable(false)
+                ->columnSpanFull(),
         ]);
+    }
+
+    protected static function buildProfileConfigState(int $cantidad, array $currentState): array
+    {
+        $cantidad = max($cantidad, 1);
+
+        $rowsBySlot = collect($currentState)
+            ->mapWithKeys(function ($item): array {
+                $slot = (int) ($item['numero_perfil'] ?? 0);
+
+                if ($slot <= 0) {
+                    return [];
+                }
+
+                return [$slot => [
+                    'id' => $item['id'] ?? null,
+                    'pin' => $item['pin'] ?? null,
+                ]];
+            });
+
+        $rows = [];
+
+        for ($slot = 1; $slot <= $cantidad; $slot++) {
+            $existing = $rowsBySlot->get($slot, []);
+
+            $rows[] = [
+                'id' => $existing['id'] ?? null,
+                'numero_perfil' => $slot,
+                'pin' => $existing['pin'] ?? null,
+            ];
+        }
+
+        return $rows;
     }
 
     public static function table(Table $table): Table
