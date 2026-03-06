@@ -29,6 +29,7 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
+        'is_super_admin',
         'empresa_id',
         'persona_id',
     ];
@@ -53,23 +54,28 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
         ];
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if ($panel->getId() !== 'admin') {
-            return false;
+        if ($panel->getId() === 'superadmin') {
+            return $this->is_super_admin === true;
         }
 
-        return $this->hasAnyRole([
-            'admin',
-            'administrador',
-            'manager',
-            'super_admin',
-            'editor',
-            'viewer',
-        ]);
+        if ($panel->getId() === 'admin') {
+            return $this->hasAnyRole([
+                'admin',
+                'administrador',
+                'manager',
+                'super_admin',
+                'editor',
+                'viewer',
+            ]);
+        }
+
+        return false;
     }
 
     public function getFilamentAvatarUrl(): ?string

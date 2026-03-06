@@ -27,6 +27,22 @@ class Cuenta extends Model
         'fecha_corte' => 'date',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (self $cuenta): void {
+            Perfil::query()
+                ->where('cuenta_id', $cuenta->id)
+                ->update([
+                    'proveedor_nombre' => $cuenta->proveedor,
+                    'correo_cuenta' => trim(mb_strtolower((string) $cuenta->correo)),
+                    'contrasena_cuenta' => $cuenta->contrasena,
+                    'fecha_inicio' => $cuenta->fecha_inicio?->toDateString(),
+                    'fecha_corte' => $cuenta->fecha_corte?->toDateString(),
+                    'updated_at' => now(),
+                ]);
+        });
+    }
+
     public function plataforma(): BelongsTo
     {
         return $this->belongsTo(Plataforma::class);

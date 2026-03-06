@@ -33,7 +33,7 @@ class AjustesGenerales extends Page implements HasForms
     {
         $user = auth()->user();
 
-        if ($user) {
+        if ($user && method_exists($user, 'preference')) {
             $user->preference()->firstOrCreate(
                 ['user_id' => $user->id],
                 UserPreferenceState::defaults(),
@@ -80,7 +80,12 @@ class AjustesGenerales extends Page implements HasForms
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (! $user || ! method_exists($user, 'preference')) {
+            Notification::make()
+                ->title('Este usuario no tiene preferencias configurables en este panel.')
+                ->warning()
+                ->send();
+
             return;
         }
 

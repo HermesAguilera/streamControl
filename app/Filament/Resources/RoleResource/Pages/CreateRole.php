@@ -5,7 +5,6 @@ namespace App\Filament\Resources\RoleResource\Pages;
 use App\Filament\Concerns\HasStandardCrudNotifications;
 use App\Filament\Concerns\RedirectsToResourceIndex;
 use App\Filament\Resources\RoleResource;
-use App\Models\Empresa;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateRole extends CreateRecord
@@ -22,8 +21,7 @@ class CreateRole extends CreateRecord
         $this->permissionsToSync = $data['permissions'] ?? [];
         unset($data['permissions']);
 
-        $data['guard_name'] = 'web';
-        $data['empresa_id'] = auth()->user()?->empresa_id ?? Empresa::query()->value('id');
+        $data['guard_name'] = 'tenant_web';
 
         return $data;
     }

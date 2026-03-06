@@ -18,9 +18,7 @@ class Dashboard extends BaseDashboard
 
     public static function canAccess(): bool
     {
-        $user = auth()->user();
-
-        return $user?->hasRole('administrador') || $user?->can('dashboard.view');
+        return auth('tenant_web')->check() || auth()->check();
     }
 
     public function getColumns(): int|array

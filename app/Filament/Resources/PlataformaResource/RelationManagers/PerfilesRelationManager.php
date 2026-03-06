@@ -13,6 +13,15 @@ class PerfilesRelationManager extends RelationManager
     protected static string $relationship = 'perfiles';
 
     protected static ?string $title = 'Clientes';
+    
+    protected static function hasPermission(string $permission): bool
+    {
+        $user = auth()->user();
+        
+        return $user?->hasRole('administrador')
+            || $user?->hasRole('admin_empresa')
+            || $user?->can($permission);
+    }
 
     public function table(Table $table): Table
     {
@@ -79,6 +88,7 @@ class PerfilesRelationManager extends RelationManager
                         ])),
                     Tables\Actions\EditAction::make()
                         ->successNotificationTitle('Cambios guardados correctamente.')
+                        ->visible(fn () => static::hasPermission('clientes.edit'))
                         ->form([
                             Forms\Components\TextInput::make('cliente_nombre')->label('Nombre cliente')->required()->maxLength(120),
                             Forms\Components\TextInput::make('cliente_telefono')->label('Número teléfono')->required()->maxLength(30),
@@ -92,6 +102,7 @@ class PerfilesRelationManager extends RelationManager
                             Forms\Components\DatePicker::make('fecha_caducidad_cuenta')->label('Fecha caducidad')->required(),
                         ]),
                     Tables\Actions\DeleteAction::make()
+                        ->visible(fn () => static::hasPermission('clientes.delete'))
                         ->modalHeading('Confirmar eliminación')
                         ->modalDescription('Esta acción no se puede deshacer.')
                         ->modalSubmitActionLabel('Eliminar')

@@ -3,8 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\TenantRole;
+use App\Models\TenantUser;
 use Filament\Forms\Get;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,18 +16,22 @@ use Illuminate\Support\Str;
 
 class UserResource extends Resource
 {
-    protected static ?string $model = User::class;
+    protected static ?string $model = TenantUser::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user';
     protected static ?string $navigationGroup = 'Administración';
     protected static ?string $navigationLabel = 'Usuarios';
-        protected static ?int $navigationSort = 999;
+    protected static ?string $modelLabel = 'usuario';
+    protected static ?string $pluralModelLabel = 'usuarios';
+    protected static ?int $navigationSort = 999;
 
     protected static function hasPermission(string $permission): bool
     {
         $user = auth()->user();
 
-        return $user?->hasRole('administrador') || $user?->can($permission);
+        return $user?->hasRole('administrador')
+            || $user?->hasRole('admin_empresa')
+            || $user?->can($permission);
     }
 
     protected static function canManageRoles(): bool
@@ -84,8 +88,7 @@ class UserResource extends Resource
                 ->dehydrated(fn (Get $get) => filled($get('password'))),
             Forms\Components\Select::make('roles')
                 ->label('Roles')
-                ->relationship('roles', 'name', modifyQueryUsing: fn (Builder $query) => $query
-                    ->where('empresa_id', auth()->user()?->empresa_id))
+                ->relationship('roles', 'name')
                 ->getOptionLabelFromRecordUsing(fn ($record): string => static::getRoleLabel($record->name))
                 ->multiple()
                 ->preload()
@@ -120,17 +123,16 @@ class UserResource extends Resource
                             ->multiple()
                             ->required()
                             ->preload()
-                            ->options(fn () => Role::query()
-                                ->where('empresa_id', auth()->user()?->empresa_id)
+                            ->options(fn () => TenantRole::query()
                                 ->get()
                                 ->mapWithKeys(fn ($role) => [
                                     $role->name => static::getRoleLabel($role->name),
                                 ])),
                     ])
-                    ->fillForm(fn (User $record): array => [
+                    ->fillForm(fn (TenantUser $record): array => [
                         'roles' => $record->roles()->pluck('name')->all(),
                     ])
-                    ->action(function (User $record, array $data): void {
+                    ->action(function (TenantUser $record, array $data): void {
                         $record->syncRoles($data['roles']);
                     }),
                 Tables\Actions\EditAction::make(),

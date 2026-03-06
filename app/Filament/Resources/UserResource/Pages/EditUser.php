@@ -17,8 +17,6 @@ class EditUser extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $data['persona_id'] = null;
-
         return $data;
     }
 

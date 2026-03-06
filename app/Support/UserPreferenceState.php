@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Arr;
 
 class UserPreferenceState
@@ -17,11 +17,15 @@ class UserPreferenceState
         ];
     }
 
-    public static function forUser(?User $user): array
+    public static function forUser(?Authenticatable $user): array
     {
         $defaults = static::defaults();
 
         if (! $user) {
+            return $defaults;
+        }
+
+        if (! method_exists($user, 'preference')) {
             return $defaults;
         }
 

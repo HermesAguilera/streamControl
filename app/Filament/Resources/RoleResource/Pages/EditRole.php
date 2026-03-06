@@ -29,7 +29,7 @@ class EditRole extends EditRecord
         $this->permissionsToSync = $data['permissions'] ?? [];
         unset($data['permissions']);
 
-        $data['guard_name'] = 'web';
+        $data['guard_name'] = 'tenant_web';
 
         return $data;
     }

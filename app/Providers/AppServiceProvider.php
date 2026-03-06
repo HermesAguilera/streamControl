@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Filament\Auth\Responses\PanelHomeLoginResponse;
+use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 
@@ -12,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(LoginResponse::class, PanelHomeLoginResponse::class);
     }
 
     /**

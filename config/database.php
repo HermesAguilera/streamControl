@@ -97,6 +97,21 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        'tenant' => [
+            'driver' => env('TENANT_DB_DRIVER', env('DB_CONNECTION', 'mysql')),
+            'host' => env('TENANT_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('TENANT_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('TENANT_DB_DATABASE', env('DB_DATABASE', 'laravel')),
+            'username' => env('TENANT_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('TENANT_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => env('TENANT_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('TENANT_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => env('TENANT_DB_SCHEMA', 'public'),
+            'sslmode' => env('TENANT_DB_SSLMODE', 'prefer'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

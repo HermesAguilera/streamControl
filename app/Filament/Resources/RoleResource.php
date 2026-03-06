@@ -3,30 +3,34 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\RoleResource\Pages;
-use App\Models\Role;
+use App\Models\TenantPermission;
+use App\Models\TenantRole;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Str;
 
 class RoleResource extends Resource
 {
-    protected static ?string $model = Role::class;
+    protected static ?string $model = TenantRole::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationGroup = 'Administración';
     protected static ?string $navigationLabel = 'Roles';
-        protected static ?int $navigationSort = 1000;
+    protected static ?string $modelLabel = 'rol';
+    protected static ?string $pluralModelLabel = 'roles';
+    protected static ?int $navigationSort = 1000;
 
     protected static function hasAccess(): bool
     {
         $user = auth()->user();
 
-        return $user?->hasRole('administrador') || $user?->can('users.roles.manage');
+        return $user?->hasRole('administrador')
+            || $user?->hasRole('admin_empresa')
+            || $user?->can('users.roles.manage');
     }
 
     public static function permissionLabel(string $permission): string
@@ -61,6 +65,7 @@ class RoleResource extends Resource
     {
         $labels = [
             'administrador' => 'Administrador',
+            'admin_empresa' => 'Admin Empresa',
             'manager' => 'Encargado',
         ];
 
@@ -87,7 +92,7 @@ class RoleResource extends Resource
             return false;
         }
 
-        return $record?->name !== 'administrador';
+        return ! in_array($record?->name, ['administrador', 'admin_empresa'], true);
     }
 
     public static function canDelete($record): bool
@@ -96,20 +101,12 @@ class RoleResource extends Resource
             return false;
         }
 
-        return $record?->name !== 'administrador';
+        return ! in_array($record?->name, ['administrador', 'admin_empresa'], true);
     }
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-
-        $empresaId = auth()->user()?->empresa_id;
-
-        if (! $empresaId) {
-            return $query->whereRaw('1 = 0');
-        }
-
-        return $query->where('empresa_id', $empresaId);
+        return parent::getEloquentQuery();
     }
 
     public static function form(Form $form): Form
@@ -124,7 +121,7 @@ class RoleResource extends Resource
                 ->multiple()
                 ->preload()
                 ->searchable()
-                ->options(fn () => Permission::query()
+                ->options(fn () => TenantPermission::query()
                     ->orderBy('name')
                     ->pluck('name', 'name')
                     ->mapWithKeys(fn (string $name): array => [$name => static::permissionLabel($name)]))
@@ -150,13 +147,13 @@ class RoleResource extends Resource
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make()
-                        ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
+                        ->visible(fn (TenantRole $record): bool => ! in_array($record->name, ['administrador', 'admin_empresa'], true)),
                     Tables\Actions\DeleteAction::make()
                         ->modalHeading('Confirmar eliminación')
                         ->modalDescription('Esta acción no se puede deshacer.')
                         ->modalSubmitActionLabel('Eliminar')
                         ->successNotificationTitle('Registro eliminado correctamente.')
-                        ->visible(fn (Role $record): bool => $record->name !== 'administrador'),
+                        ->visible(fn (TenantRole $record): bool => ! in_array($record->name, ['administrador', 'admin_empresa'], true)),
                 ])
                     ->icon('heroicon-m-ellipsis-vertical')
                     ->label(''),

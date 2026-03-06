@@ -72,12 +72,14 @@ class DatabaseSeeder extends Seeder
 
         $adminEmail = env('DEFAULT_ADMIN_EMAIL', 'admin@streaming.local');
         $adminPassword = env('DEFAULT_ADMIN_PASSWORD', 'password');
+        $adminIsSuperAdmin = (bool) env('DEFAULT_ADMIN_IS_SUPERADMIN', true);
 
         $adminUser = User::updateOrCreate(
             ['email' => $adminEmail],
             [
                 'name' => 'Administrador',
                 'password' => Hash::make($adminPassword),
+                'is_super_admin' => $adminIsSuperAdmin,
                 'empresa_id' => $empresa->id,
                 'persona_id' => $personaAdmin->id,
             ]
@@ -90,7 +92,6 @@ class DatabaseSeeder extends Seeder
         Plataforma::firstOrCreate(['nombre' => 'HBO Max'], ['activa' => true]);
 
         $this->call([
-            PlataformaPerfilesDemoSeeder::class,
         ]);
     }
 }

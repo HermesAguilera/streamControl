@@ -2,9 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\TenantPanelLogin;
 use App\Filament\Pages\AjustesGenerales;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\InformeVentas;
+use App\Http\Middleware\EnsureTenantSessionIsolation;
+use App\Http\Middleware\InitializeTenantConnection;
 use Filament\Navigation\MenuItem;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -28,7 +31,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('StreamControl')
-            ->login()
+            ->authGuard('tenant_web')
+            ->login(TenantPanelLogin::class)
             ->darkMode()
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
@@ -58,12 +62,21 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                InitializeTenantConnection::class,
+                EnsureTenantSessionIsolation::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+            ])
+            ->persistentMiddleware([
+                StartSession::class,
+                InitializeTenantConnection::class,
+                EnsureTenantSessionIsolation::class,
+                AuthenticateSession::class,
+                SubstituteBindings::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

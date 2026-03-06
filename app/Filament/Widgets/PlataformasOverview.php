@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 
 class PlataformasOverview extends StatsOverviewWidget
 {
+    protected static bool $isLazy = false;
+
     protected function getStats(): array
     {
         $hoy = Carbon::today();

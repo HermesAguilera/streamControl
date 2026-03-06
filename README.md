@@ -59,3 +59,41 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Tenancy Sanity Check
+
+Antes de desplegar, ejecuta este comando para validar conectividad central y tablas criticas por empresa:
+
+```bash
+php artisan tenancy:sanity-check
+```
+
+Para validar una empresa especifica por slug:
+
+```bash
+php artisan tenancy:sanity-check --tenant=mi-empresa
+```
+
+Si agregas nuevas migraciones tenant y necesitas aplicarlas a empresas ya activas:
+
+```bash
+php artisan tenancy:migrate-active
+```
+
+Para migrar solo una empresa por slug:
+
+```bash
+php artisan tenancy:migrate-active --tenant=mi-empresa
+```
+
+Si el dashboard muestra el bloque de plataformas vacio en empresas existentes, carga catalogo base:
+
+```bash
+php artisan tenancy:seed-platforms-active
+```
+
+Para sembrar solo una empresa por slug:
+
+```bash
+php artisan tenancy:seed-platforms-active --tenant=mi-empresa
+```

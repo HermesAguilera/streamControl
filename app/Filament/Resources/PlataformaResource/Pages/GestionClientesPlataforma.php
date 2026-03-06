@@ -41,7 +41,9 @@ class GestionClientesPlataforma extends ManageRelatedRecords
     {
         $user = auth()->user();
 
-        return $user?->hasRole('administrador') || $user?->can($permission);
+        return $user?->hasRole('administrador')
+            || $user?->hasRole('admin_empresa')
+            || $user?->can($permission);
     }
 
     public static function canAccess(array $parameters = []): bool

@@ -10,6 +10,8 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ResumenGeneralWidget extends StatsOverviewWidget
 {
+    protected static bool $isLazy = false;
+
     protected function getStats(): array
     {
         $hoy = Carbon::today();
